@@ -21,11 +21,11 @@ public:
   
 
 private:
-	bool overlap (double start1, double end1, double start2, double end2, bool& lower) const;
-	vector<Actor*>::const_iterator actorBinarySearch(double y, vector<Actor*> actors, vector<Actor*>::const_iterator start, vector<Actor*>::const_iterator end) const;
+	Actor* m_peach;
 	vector<Actor*> m_actors;
 	int m_numSpecialActors;
-	
+	bool overlap(double start1, double end1, double start2, double end2, bool& lower) const;
+	vector<Actor*>::const_iterator actorBinarySearch(double y, const vector<Actor*>& actors, vector<Actor*>::const_iterator start, vector<Actor*>::const_iterator end) const;
 };
 
 #endif // STUDENTWORLD_H_

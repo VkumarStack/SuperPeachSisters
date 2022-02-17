@@ -74,7 +74,7 @@ void Peach::doSomething()
 			case KEY_PRESS_LEFT:
 				setDirection(180);
 			    actor = nullptr;
-				if (!getStudentWorld()->isBlockingAt(getX() + 4, getY(), actor))
+				if (!getStudentWorld()->isBlockingAt(getX() - 4, getY(), actor))
 					moveTo(getX() - 4, getY());
 				else if (actor != nullptr)
 				{

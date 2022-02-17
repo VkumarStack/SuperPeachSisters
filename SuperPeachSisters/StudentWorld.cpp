@@ -1,6 +1,9 @@
 #include "StudentWorld.h"
 #include "GameConstants.h"
 #include "Actor.h"
+#include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <string>
 #include <algorithm>
 using namespace std;
@@ -20,7 +23,40 @@ StudentWorld::StudentWorld(string assetPath)
 }
 
 int StudentWorld::init()
-{
+{   
+    int level = getLevel();
+    ostringstream oss;
+    oss.fill('0');
+    oss << "level" << setw(2) << level << ".txt";
+    
+    Level lev(assetPath());
+    string level_file = oss.str();
+    Level::LoadResult result = lev.loadLevel(level_file);
+    if (result == Level::load_success)
+    {
+        Level::GridEntry ge;
+        for (int w = 0; w < GRID_WIDTH; w++)
+        {
+            for (int c = 0; c < GRID_HEIGHT; c++)
+            {
+                ge = lev.getContentsOf(w, c);
+                switch (ge)
+                {
+                    case Level::peach:
+                        m_peach = new Peach(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT);
+                        break;
+                    case Level::block:
+                        addActor(new Block(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT, 0));
+                        break;
+                }
+            }
+        }
+    }
+    else
+    {
+        exit(1);
+    }
+
     return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -28,8 +64,17 @@ int StudentWorld::move()
 {
     // This code is here merely to allow the game to build, run, and terminate after you hit enter.
     // Notice that the return value GWSTATUS_PLAYER_DIED will cause our framework to end the current level.
-    decLives();
-    return GWSTATUS_PLAYER_DIED;
+    //decLives();
+    //return GWSTATUS_PLAYER_DIED;
+    vector<Actor*>::iterator it;
+    for (it = m_actors.begin(); it != m_actors.end(); it++)
+    {
+        if ((*it)->alive())
+            (*it)->doSomething();
+        if (m_peach->alive())
+            m_peach->doSomething();
+    }
+    return GWSTATUS_CONTINUE_GAME;
 }
 
 void StudentWorld::cleanUp()
@@ -106,9 +151,9 @@ bool StudentWorld::isBlockingAt(double x, double y, Actor*& actor) const
 
 bool StudentWorld::overlap(double start1, double end1, double start2, double end2, bool& lower /*if (start1, end1) is lower than (start2, end2)*/) const
 {
+
     if ((end1 >= start2) && (end2 >= start1))
         return true;
-
     if (end1 < start2)
         lower = true;
     else
@@ -116,9 +161,9 @@ bool StudentWorld::overlap(double start1, double end1, double start2, double end
     return false;
 }
 
-vector<Actor*>::const_iterator StudentWorld::actorBinarySearch(double y, vector<Actor*> actors, vector<Actor*>::const_iterator start, vector<Actor*>::const_iterator end) const
+vector<Actor*>::const_iterator StudentWorld::actorBinarySearch(double y, const vector<Actor*>& actors, vector<Actor*>::const_iterator start, vector<Actor*>::const_iterator end) const
 {
-    if (start >= end)
+    if (start <= end)
     {
         bool lower;
         vector<Actor*>::const_iterator mid = start + (end - start) / 2; 
