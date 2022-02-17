@@ -9,7 +9,7 @@ class StudentWorld;
 class Actor : public GraphObject
 {
 	public:
-		Actor(int imageID, int startX, int startY, int startDirection, StudentWorld* world, int dir = 0, int depth = 0, double size = 1.0);
+		Actor(StudentWorld* world, int imageID, int startX, int startY, int dir = 0, int depth = 0, double size = 1.0);
 		bool operator<(const Actor& other) const; // Define < operator for use in STL data structures 
 		
 		virtual void doSomething() = 0;
@@ -23,7 +23,8 @@ class Actor : public GraphObject
 		virtual bool sentient() const { return true; } // If the Actor has functionality that involves any sort of action (effectively everything except for the Block and Pipe are sentient)
 		virtual bool usable() const { return false; } // If the Actor has functionality that can be "used" by a player (i.e. Blocks, Flowers, Flags, etc. are usable)
 		virtual bool player() const { return false; } // If the Actor is Peach
-		virtual bool alive() const { return m_isAlive; }
+		virtual bool priority() const { return false; } // If the Actor is a fireball or goodie 
+		bool alive() const { return m_isAlive; }
 	private:
 		StudentWorld* m_studentWorld; // Access other actors contained in the StudentWorld object
 		bool m_isAlive;
@@ -33,7 +34,7 @@ class Actor : public GraphObject
 class Block : public Actor
 {
 	public:
-		Block(int startX, int startY, StudentWorld* world, int goodie);
+		Block(StudentWorld* world, int startX, int startY, int goodie);
 		virtual void doSomething() {};
 		virtual void getBonked(const Actor& actor);
 		virtual bool stationary() const { return true; }
@@ -48,7 +49,7 @@ class Block : public Actor
 class Peach : public Actor
 {
 public:
-	Peach(int startX, int startY, StudentWorld* world);
+	Peach(StudentWorld* world, int startX, int startY);
 	virtual void doSomething();
 	virtual void getBonked(const Actor& actor) {}
 

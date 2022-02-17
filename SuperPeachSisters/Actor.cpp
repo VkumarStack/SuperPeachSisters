@@ -2,7 +2,7 @@
 #include "StudentWorld.h"
 
 // Students:  Add code to this file, Actor.h, StudentWorld.h, and StudentWorld.cpp
-Actor::Actor(int imageID, int startX, int startY, int startDirection, StudentWorld* world, int dir = 0, int depth = 0, double size = 1.0) : GraphObject(imageID, startX, startY, dir, depth, size)
+Actor::Actor(StudentWorld* world, int imageID, int startX, int startY, int dir, int depth, double size) : GraphObject(imageID, startX, startY, dir, depth, size)
 {
 	m_studentWorld = world;
 	m_isAlive = true;
@@ -13,9 +13,9 @@ bool Actor::operator<(const Actor& other) const
 	// Interactable (fireballs, goodies) Actors should have higher priority since their actions can change more behavior
 	// i.e. The action of a fireball hitting an enemy should be performed first since beyond so the enemy can no longer 
 	// attack Peach if interacting with her 
-	if (usable() && !other.usable())
+	if (priority() && !other.priority())
 		return true;
-	else if (other.usable() && !usable())
+	else if (other.priority() && !priority())
 		return false;
 
 	// All non-interactable Actors (meaning those that are NOT goodies, fire flowers, or peach) are intended to stay in a fixed vertical 
@@ -23,11 +23,11 @@ bool Actor::operator<(const Actor& other) const
 	// since vertical position will stay the same)
 	if (getY() < other.getY())
 		return true;
-	else if (getY() > other.getY())
+	else
 		return false; 
 }
 /*------------------------------------------------------------------------------------------------------------------------------*/
-Block::Block(int startX, int startY, StudentWorld* world, int goodie) : Actor(IID_BLOCK, startX, startY, 0, world, 2, 1)
+Block::Block(StudentWorld* world, int startX, int startY, int goodie) : Actor(world, IID_BLOCK, startX, startY, 0, 2, 1)
 {
 	m_containsGoodie = goodie;
 }
@@ -45,7 +45,7 @@ void Block::getBonked(const Actor& actor)
 
 
 /*------------------------------------------------------------------------------------------------------------------------------*/
-Peach::Peach(int startX, int startY, StudentWorld* world) : Actor(IID_PEACH, startX, startY, 0, world)
+Peach::Peach(StudentWorld* world, int startX, int startY) : Actor(world, IID_PEACH, startX, startY, 0)
 {
 	m_hitPoints = 1;
 	m_jumpPower = false;
@@ -68,12 +68,13 @@ void Peach::doSomething()
 	int key = -1;
 	if (getStudentWorld()->getKey(key))
 	{
+		Actor* actor;
 		switch (key)
 		{
 			case KEY_PRESS_LEFT:
 				setDirection(180);
-				Actor* actor = nullptr;
-				if (!isBlockingObjectAt(getX() - 4, getY()))
+			    actor = nullptr;
+				if (!getStudentWorld()->isBlockingAt(getX() + 4, getY(), actor))
 					moveTo(getX() - 4, getY());
 				else if (actor != nullptr)
 				{
@@ -82,8 +83,8 @@ void Peach::doSomething()
 				break;
 			case KEY_PRESS_RIGHT:
 				setDirection(0);
-				Actor* actor = nullptr;
-				if (!isBlockingObjectAt(getX() + 4, getY()))
+				actor = nullptr;
+				if (!getStudentWorld()->isBlockingAt(getX() + 4, getY(), actor))
 					moveTo(getX() + 4, getY());
 				else if (actor != nullptr)
 				{
