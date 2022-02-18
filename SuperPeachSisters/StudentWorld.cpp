@@ -71,9 +71,9 @@ int StudentWorld::move()
     {
         if ((*it)->alive())
             (*it)->doSomething();
-        if (m_peach->alive())
-            m_peach->doSomething();
     }
+    if (m_peach->alive())
+        m_peach->doSomething();
     return GWSTATUS_CONTINUE_GAME;
 }
 

@@ -48,6 +48,7 @@ void Block::getBonked(const Actor& actor)
 Peach::Peach(StudentWorld* world, int startX, int startY) : Actor(world, IID_PEACH, startX, startY, 0)
 {
 	m_hitPoints = 1;
+	m_remainingJumpDistance = 0;
 	m_jumpPower = false;
 	m_shootPowerTicks = -1;
 	m_starPowerTicks = 0;
@@ -65,10 +66,38 @@ void Peach::doSomething()
 	if (m_shootPowerTicks > 0)
 		m_shootPowerTicks--;
 	
+	Actor* actor;
+	actor = nullptr;
+	if (getStudentWorld()->isBlockingAt(getX(), getY(), actor) && actor != nullptr)
+		actor->getBonked(*this);
+
+	actor = nullptr;
+	if (getJumping())
+	{
+		if (getStudentWorld()->isBlockingAt(getX(), getY() + 4, actor) && actor != nullptr && (actor->stationary() && !actor->sentient()))
+		{
+			actor->getBonked(*this);
+			m_remainingJumpDistance = 0;
+		}
+		else
+		{
+			moveTo(getX(), getY() + 4);
+			m_remainingJumpDistance--;
+		}
+	}
+	else
+	{
+		if (!((getStudentWorld()->isBlockingAt(getX(), getY(), actor) && actor != nullptr && actor->stationary() && !actor->sentient())
+			|| (getStudentWorld()->isBlockingAt(getX(), getY() - 3, actor) && actor != nullptr && actor->stationary() && !actor->sentient())			
+			))
+		{
+			moveTo(getX(), getY() - 4);
+		}
+	}
+
 	int key = -1;
 	if (getStudentWorld()->getKey(key))
 	{
-		Actor* actor;
 		switch (key)
 		{
 			case KEY_PRESS_LEFT:
@@ -92,8 +121,24 @@ void Peach::doSomething()
 				}
 				break;
 			case KEY_PRESS_UP:
+				actor = nullptr;
+				if (getStudentWorld()->isBlockingAt(getX(), getY() - 1, actor) && actor->stationary() && !actor->sentient())
+				{
+					if (getJumpPower())
+						m_remainingJumpDistance = 12;
+					else
+						m_remainingJumpDistance = 8;
+					getStudentWorld()->playSound(SOUND_PLAYER_JUMP);
+				}
 				break;
 			case KEY_PRESS_SPACE:
+				if (m_shootPowerTicks == 0)
+				{
+					getStudentWorld()->playSound(SOUND_PLAYER_FIRE);
+					m_shootPowerTicks = 8;
+					// TO DO
+					// getStudentWorld()->addActor(new PeachFireball(...))
+				}
 				break;
 		}
 	}

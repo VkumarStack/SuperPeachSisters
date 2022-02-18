@@ -55,12 +55,14 @@ public:
 
 	virtual bool player() const { return true; }
 	int getHitPoints() const { return m_hitPoints; }
+	int getJumping()  const { return (m_remainingJumpDistance > 0);  }
 	bool getJumpPower() const { return m_jumpPower; }
 	bool getShootPower() const { return m_shootPowerTicks != -1; }
 	bool getStarPower() const { return m_starPowerTicks != 0; }
 	bool getTempInvincibility() const { return m_tempInvincibilityTicks != 0; }
 private:
 	int m_hitPoints;
+	int m_remainingJumpDistance;
 	bool m_jumpPower;
 	int m_shootPowerTicks;
 	int m_starPowerTicks;
