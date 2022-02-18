@@ -10,13 +10,13 @@ using namespace std;
 
 GameWorld* createStudentWorld(string assetPath)
 {
-	return new StudentWorld(assetPath);
+    return new StudentWorld(assetPath);
 }
 
 // Students:  Add code to this file, StudentWorld.h, Actor.h, and Actor.cpp
 
 StudentWorld::StudentWorld(string assetPath)
-: GameWorld(assetPath)
+    : GameWorld(assetPath)
 {
     m_actors = vector<Actor*>();
     m_numSpecialActors = 0;
@@ -29,12 +29,12 @@ StudentWorld::~StudentWorld()
 }
 
 int StudentWorld::init()
-{   
+{
     int level = getLevel();
     ostringstream oss;
     oss.fill('0');
     oss << "level" << setw(2) << level << ".txt";
-    
+
     Level lev(assetPath());
     string level_file = oss.str();
     Level::LoadResult result = lev.loadLevel(level_file);
@@ -48,24 +48,24 @@ int StudentWorld::init()
                 ge = lev.getContentsOf(w, c);
                 switch (ge)
                 {
-                    case Level::peach:
-                        m_peach = new Peach(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT);
-                        break;
-                    case Level::mushroom_goodie_block:
-                    case Level::flower_goodie_block:
-                    case Level::star_goodie_block:
-                    case Level::block:
-                        addActor(new Block(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT, 0));
-                        break;
-                    case Level::pipe:
-                        addActor(new Pipe(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT));
-                        break;
-                    case Level::flag:
-                        addActor(new Flag(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT));
-                        break;
-                    case Level::mario:
-                        addActor(new Mario(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT));
-                        break;
+                case Level::peach:
+                    m_peach = new Peach(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT);
+                    break;
+                case Level::mushroom_goodie_block:
+                case Level::flower_goodie_block:
+                case Level::star_goodie_block:
+                case Level::block:
+                    addActor(new Block(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT, 0));
+                    break;
+                case Level::pipe:
+                    addActor(new Pipe(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT));
+                    break;
+                case Level::flag:
+                    addActor(new Flag(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT));
+                    break;
+                case Level::mario:
+                    addActor(new Mario(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT));
+                    break;
                 }
             }
         }
@@ -110,7 +110,7 @@ void StudentWorld::cleanUp()
     it = m_actors.begin();
     while (it != m_actors.end())
     {
-        delete *it;
+        delete* it;
         it = m_actors.erase(it);
     }
     delete m_peach;
@@ -139,7 +139,7 @@ void StudentWorld::addActor(Actor* actor)
     m_actors.insert(it, actor);
 }
 
-bool StudentWorld::isBlockingAt(double x, double y, Actor*& actor) const
+bool StudentWorld::isBlockingAt(double x, double y, const Actor& actor, bool bonk) const
 {
     bool lower;
     vector<Actor*>::const_iterator it;
@@ -149,8 +149,11 @@ bool StudentWorld::isBlockingAt(double x, double y, Actor*& actor) const
     {
         if (overlap(x, x + SPRITE_WIDTH - 1, (*it)->getX(), (*it)->getX() + SPRITE_WIDTH - 1, lower) && overlap(y, y + SPRITE_HEIGHT - 1, (*it)->getY(), (*it)->getY() + SPRITE_HEIGHT - 1, lower))
         {
-            actor = *it;
-            return true; 
+            if (bonk)
+                (*it)->getBonked(actor);
+            if ((*it)->terrain())
+                return true;
+            return false;
         }
         it++;
     }
@@ -161,15 +164,20 @@ bool StudentWorld::isBlockingAt(double x, double y, Actor*& actor) const
         return false;
     // At this point, it points to a position in actor that overlaps VERTICALLY; since Actors is sorted vertically, all that needs to be checked is the horizontally overlapping of all 
     // Actors relative to it (because it merely found the vertical matches with the binary search it is still possible that there could be vertical matches to the left or right)
-    vector<Actor*>::const_iterator horizontalIt = it; 
+    vector<Actor*>::const_iterator horizontalIt = it;
     // Check for left overlapping
     while (horizontalIt >= m_actors.begin() && overlap(y, y + SPRITE_HEIGHT - 1, (*horizontalIt)->getY(), (*horizontalIt)->getY() + SPRITE_HEIGHT - 1, lower))
     {
         if (overlap(x, x + SPRITE_WIDTH - 1, (*horizontalIt)->getX(), (*horizontalIt)->getX() + SPRITE_WIDTH - 1, lower))
         {
-            actor = *horizontalIt;
-            return true;
+            if (bonk)
+                (*horizontalIt)->getBonked(actor);
+            if ((*horizontalIt)->terrain())
+                return true;
+            return false;
         }
+        if (horizontalIt == m_actors.begin())
+            break;
         horizontalIt--;
     }
     // Check for right overlapping
@@ -178,8 +186,11 @@ bool StudentWorld::isBlockingAt(double x, double y, Actor*& actor) const
     {
         if (overlap(x, x + SPRITE_WIDTH - 1, (*horizontalIt)->getX(), (*horizontalIt)->getX() + SPRITE_WIDTH - 1, lower))
         {
-            actor = *horizontalIt;
-            return true;
+            if (bonk)
+                (*horizontalIt)->getBonked(actor);
+            if ((*horizontalIt)->terrain())
+                return true;
+            return false;
         }
         horizontalIt++;
     }
@@ -215,7 +226,7 @@ vector<Actor*>::const_iterator StudentWorld::actorBinarySearch(double y, const v
     if (start <= end)
     {
         bool lower;
-        vector<Actor*>::const_iterator mid = start + (end - start) / 2; 
+        vector<Actor*>::const_iterator mid = start + (end - start) / 2;
         if (overlap(y, y + SPRITE_HEIGHT - 1, (*mid)->getY(), (*mid)->getY() + SPRITE_HEIGHT - 1, lower))
             return mid;
         else if (lower)

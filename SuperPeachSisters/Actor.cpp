@@ -24,7 +24,7 @@ bool Actor::operator<(const Actor& other) const
 	if (getY() < other.getY())
 		return true;
 	else
-		return false; 
+		return false;
 }
 
 /*------------------------------------------------------------------------------------------------------------------------------*/
@@ -37,7 +37,7 @@ Peach::Peach(StudentWorld* world, int startX, int startY) : Actor(world, IID_PEA
 	m_shootPowerTicks = -1;
 	m_starPowerTicks = 0;
 	m_tempInvincibilityTicks = 0;
-}	
+}
 
 void Peach::doSomething()
 {
@@ -49,20 +49,13 @@ void Peach::doSomething()
 		m_tempInvincibilityTicks--;
 	if (m_shootPowerTicks > 0)
 		m_shootPowerTicks--;
-	
-	Actor* actor;
-	actor = nullptr;
-	if (getStudentWorld()->isBlockingAt(getX(), getY(), actor) && actor != nullptr)
-		actor->getBonked(*this);
 
-	actor = nullptr;
+	getStudentWorld()->isBlockingAt(getX(), getY(), *this, true);
+
 	if (getJumping())
 	{
-		if (getStudentWorld()->isBlockingAt(getX(), getY() + 4, actor) && actor != nullptr && (actor->stationary() && !actor->sentient()))
-		{
-			actor->getBonked(*this);
+		if (getStudentWorld()->isBlockingAt(getX(), getY() + 4, *this, true))
 			m_remainingJumpDistance = 0;
-		}
 		else
 		{
 			moveTo(getX(), getY() + 4);
@@ -71,12 +64,10 @@ void Peach::doSomething()
 	}
 	else
 	{
-		if (!((getStudentWorld()->isBlockingAt(getX(), getY(), actor) && actor != nullptr && actor->stationary() && !actor->sentient())
-			|| (getStudentWorld()->isBlockingAt(getX(), getY() - 3, actor) && actor != nullptr && actor->stationary() && !actor->sentient())			
-			))
-		{
+		if (!(((getStudentWorld()->isBlockingAt(getX(), getY(), *this, false))
+			|| (getStudentWorld()->isBlockingAt(getX(), getY() - 3, *this, false))
+			)))
 			moveTo(getX(), getY() - 4);
-		}
 	}
 
 	int key = -1;
@@ -84,46 +75,35 @@ void Peach::doSomething()
 	{
 		switch (key)
 		{
-			case KEY_PRESS_LEFT:
-				setDirection(180);
-			    actor = nullptr;
-				if (!getStudentWorld()->isBlockingAt(getX() - 4, getY(), actor) || (actor != nullptr && !actor->stationary() && actor->sentient()))
-					moveTo(getX() - 4, getY());
-				else if (actor != nullptr)
-				{
-					actor->getBonked(*this);
-				}
-				break;
-			case KEY_PRESS_RIGHT:
-				setDirection(0);
-				actor = nullptr;
-				if (!getStudentWorld()->isBlockingAt(getX() + 4, getY(), actor) || (actor != nullptr && !actor->stationary() && actor->sentient()))
-					moveTo(getX() + 4, getY());
-				else if (actor != nullptr)
-				{
-					actor->getBonked(*this);
-				}
-				break;
-			case KEY_PRESS_UP:
-				actor = nullptr;
-				if (getStudentWorld()->isBlockingAt(getX(), getY() - 1, actor) && actor->stationary() && !actor->sentient())
-				{
-					if (getJumpPower())
-						m_remainingJumpDistance = 12;
-					else
-						m_remainingJumpDistance = 8;
-					getStudentWorld()->playSound(SOUND_PLAYER_JUMP);
-				}
-				break;
-			case KEY_PRESS_SPACE:
-				if (m_shootPowerTicks == 0)
-				{
-					getStudentWorld()->playSound(SOUND_PLAYER_FIRE);
-					m_shootPowerTicks = 8;
-					// TO DO
-					// getStudentWorld()->addActor(new PeachFireball(...))
-				}
-				break;
+		case KEY_PRESS_LEFT:
+			setDirection(180);
+			if (!getStudentWorld()->isBlockingAt(getX() - 4, getY(), *this, true))
+				moveTo(getX() - 4, getY());
+			break;
+		case KEY_PRESS_RIGHT:
+			setDirection(0);
+			if (!getStudentWorld()->isBlockingAt(getX() + 4, getY(), *this, true))
+				moveTo(getX() + 4, getY());
+			break;
+		case KEY_PRESS_UP:
+			if (getStudentWorld()->isBlockingAt(getX(), getY() - 1, *this, false))
+			{
+				if (getJumpPower())
+					m_remainingJumpDistance = 12;
+				else
+					m_remainingJumpDistance = 8;
+				getStudentWorld()->playSound(SOUND_PLAYER_JUMP);
+			}
+			break;
+		case KEY_PRESS_SPACE:
+			if (m_shootPowerTicks == 0)
+			{
+				getStudentWorld()->playSound(SOUND_PLAYER_FIRE);
+				m_shootPowerTicks = 8;
+				// TO DO
+				// getStudentWorld()->addActor(new PeachFireball(...))
+			}
+			break;
 		}
 	}
 }
