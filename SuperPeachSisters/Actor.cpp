@@ -26,25 +26,9 @@ bool Actor::operator<(const Actor& other) const
 	else
 		return false; 
 }
-/*------------------------------------------------------------------------------------------------------------------------------*/
-Block::Block(StudentWorld* world, int startX, int startY, int goodie) : Actor(world, IID_BLOCK, startX, startY, 0, 2, 1)
-{
-	m_containsGoodie = goodie;
-}
-
-void Block::getBonked(const Actor& actor) 
-{
-	if (actor.player())
-	{
-		if (m_containsGoodie == 0)
-			getStudentWorld()->playSound(SOUND_PLAYER_BONK);
-		// TODO IMPLEMENT POWERUPS
-	}
-}
-
-
 
 /*------------------------------------------------------------------------------------------------------------------------------*/
+
 Peach::Peach(StudentWorld* world, int startX, int startY) : Actor(world, IID_PEACH, startX, startY, 0)
 {
 	m_hitPoints = 1;
@@ -103,7 +87,7 @@ void Peach::doSomething()
 			case KEY_PRESS_LEFT:
 				setDirection(180);
 			    actor = nullptr;
-				if (!getStudentWorld()->isBlockingAt(getX() - 4, getY(), actor))
+				if (!getStudentWorld()->isBlockingAt(getX() - 4, getY(), actor) || (actor != nullptr && !actor->stationary() && actor->sentient()))
 					moveTo(getX() - 4, getY());
 				else if (actor != nullptr)
 				{
@@ -113,7 +97,7 @@ void Peach::doSomething()
 			case KEY_PRESS_RIGHT:
 				setDirection(0);
 				actor = nullptr;
-				if (!getStudentWorld()->isBlockingAt(getX() + 4, getY(), actor))
+				if (!getStudentWorld()->isBlockingAt(getX() + 4, getY(), actor) || (actor != nullptr && !actor->stationary() && actor->sentient()))
 					moveTo(getX() + 4, getY());
 				else if (actor != nullptr)
 				{
@@ -140,6 +124,50 @@ void Peach::doSomething()
 					// getStudentWorld()->addActor(new PeachFireball(...))
 				}
 				break;
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------------------------------------------------------*/
+Block::Block(StudentWorld* world, int startX, int startY, int goodie) : Terrain(world, IID_BLOCK, startX, startY)
+{
+	m_containsGoodie = goodie;
+}
+
+void Block::getBonked(const Actor& actor)
+{
+	if (actor.player())
+	{
+		if (m_containsGoodie == 0)
+			getStudentWorld()->playSound(SOUND_PLAYER_BONK);
+		// TODO IMPLEMENT POWERUPS
+	}
+}
+
+/*------------------------------------------------------------------------------------------------------------------------------*/
+void Flag::doSomething()
+{
+	if (alive())
+	{
+		Actor* actor;
+		if (getStudentWorld()->playerAt(getX(), getY(), actor))
+		{
+			getStudentWorld()->increaseScore(1000);
+			setDead();
+		}
+	}
+}
+/*------------------------------------------------------------------------------------------------------------------------------*/
+void Mario::doSomething()
+{
+	if (alive())
+	{
+		Actor* actor = nullptr;
+		if (getStudentWorld()->playerAt(getX(), getY(), actor))
+		{
+			getStudentWorld()->increaseScore(1000);
+			setDead();
+			getStudentWorld()->setFinalLevel();
 		}
 	}
 }

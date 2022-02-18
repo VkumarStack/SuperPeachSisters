@@ -20,6 +20,12 @@ StudentWorld::StudentWorld(string assetPath)
 {
     m_actors = vector<Actor*>();
     m_numSpecialActors = 0;
+    m_finalLevel = false;
+}
+
+StudentWorld::~StudentWorld()
+{
+    cleanUp();
 }
 
 int StudentWorld::init()
@@ -45,8 +51,20 @@ int StudentWorld::init()
                     case Level::peach:
                         m_peach = new Peach(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT);
                         break;
+                    case Level::mushroom_goodie_block:
+                    case Level::flower_goodie_block:
+                    case Level::star_goodie_block:
                     case Level::block:
                         addActor(new Block(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT, 0));
+                        break;
+                    case Level::pipe:
+                        addActor(new Pipe(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT));
+                        break;
+                    case Level::flag:
+                        addActor(new Flag(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT));
+                        break;
+                    case Level::mario:
+                        addActor(new Mario(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT));
                         break;
                 }
             }
@@ -70,7 +88,16 @@ int StudentWorld::move()
     for (it = m_actors.begin(); it != m_actors.end(); it++)
     {
         if ((*it)->alive())
+        {
             (*it)->doSomething();
+            if (/*(*it)->stationary() && (*it)->usable() && (*it)->friendly() && */!(*it)->alive())
+            {
+                cerr << "CALLING" << endl;
+                if (m_finalLevel)
+                    return GWSTATUS_PLAYER_WON;
+                return GWSTATUS_FINISHED_LEVEL;
+            }
+        }
     }
     if (m_peach->alive())
         m_peach->doSomething();
@@ -79,6 +106,14 @@ int StudentWorld::move()
 
 void StudentWorld::cleanUp()
 {
+    vector<Actor*>::iterator it;
+    it = m_actors.begin();
+    while (it != m_actors.end())
+    {
+        delete *it;
+        it = m_actors.erase(it);
+    }
+    delete m_peach;
 }
 
 void StudentWorld::addActor(Actor* actor)
@@ -87,7 +122,10 @@ void StudentWorld::addActor(Actor* actor)
         m_numSpecialActors++;
 
     if (m_actors.size() == 0)
+    {
         m_actors.push_back(actor);
+        return;
+    }
 
     vector<Actor*>::iterator it;
     for (it = m_actors.begin(); it != m_actors.end(); it++)
@@ -146,6 +184,17 @@ bool StudentWorld::isBlockingAt(double x, double y, Actor*& actor) const
         horizontalIt++;
     }
     // No overlapping found
+    return false;
+}
+
+bool StudentWorld::playerAt(double x, double y, Actor*& actor) const
+{
+    bool lower;
+    if (overlap(x, x + SPRITE_WIDTH - 1, m_peach->getX(), m_peach->getX() + SPRITE_WIDTH - 1, lower) && overlap(y, y + SPRITE_HEIGHT - 1, m_peach->getY(), m_peach->getY() + SPRITE_HEIGHT - 1, lower))
+    {
+        actor = m_peach;
+        return true;
+    }
     return false;
 }
 

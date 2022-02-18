@@ -30,20 +30,6 @@ class Actor : public GraphObject
 		bool m_isAlive;
 };
 
-/*------------------------------------------------------------------------------------------------------------------------------*/
-class Block : public Actor
-{
-	public:
-		Block(StudentWorld* world, int startX, int startY, int goodie);
-		virtual void doSomething() {};
-		virtual void getBonked(const Actor& actor);
-		virtual bool stationary() const { return true; }
-		virtual bool sentient() const { return false; }
-		virtual bool usable() const { return true; }
-	private:
-		int m_containsGoodie; // 0 = No Goodie, 1 = Mushroom, 2 = Flower, 3 = Star 
-};
-
 /*----------------------------------------------------------------------------------------------------------------------------*/
 
 class Peach : public Actor
@@ -67,6 +53,63 @@ private:
 	int m_shootPowerTicks;
 	int m_starPowerTicks;
 	int m_tempInvincibilityTicks;
+};
+
+/*------------------------------------------------------------------------------------------------------------------------------*/
+class Terrain : public Actor
+{	
+	public:
+		Terrain(StudentWorld* world, int imageID, int startX, int startY) : Actor(world, imageID, startX, startY, 0, 2, 1) {}
+		virtual void doSomething() {}
+		virtual void getBonked(const Actor& actor) = 0;
+		virtual bool stationary() const { return true; }
+		virtual bool sentient() const { return false; }
+};
+
+/*------------------------------------------------------------------------------------------------------------------------------*/
+class Block : public Terrain
+{
+	public:
+		Block(StudentWorld* world, int startX, int startY, int goodie);
+		virtual void getBonked(const Actor& actor);
+		virtual bool usable() const { return true; }
+	private:
+		int m_containsGoodie; // 0 = No Goodie, 1 = Mushroom, 2 = Flower, 3 = Star 
+};
+
+/*------------------------------------------------------------------------------------------------------------------------------*/
+class Pipe : public Terrain
+{
+	public:
+		Pipe(StudentWorld* world, int startX, int startY) : Terrain(world, IID_PIPE, startX, startY) {}
+		virtual void getBonked(const Actor& actor) {}
+};
+
+/*------------------------------------------------------------------------------------------------------------------------------*/
+class Goalpost : public Actor
+{
+	public:
+		Goalpost(StudentWorld* world, int imageID, int startX, int startY) : Actor(world, imageID, startX, startY, 0, 1, 1) {}
+		virtual void doSomething() = 0;
+		virtual void getBonked(const Actor& actor) {}
+		virtual bool stationary() { return true; }
+		virtual bool usable() { return true; }
+};
+
+/*------------------------------------------------------------------------------------------------------------------------------*/
+class Flag : public Goalpost
+{
+	public:
+		Flag(StudentWorld* world, int startX, int startY) : Goalpost(world, IID_FLAG, startX, startY) {}
+		virtual void doSomething();
+};
+
+/*------------------------------------------------------------------------------------------------------------------------------*/
+class Mario : public Goalpost
+{
+	public:
+		Mario(StudentWorld* world, int startX, int startY) : Goalpost(world, IID_MARIO, startX, startY) {}
+		virtual void doSomething();
 };
 
 #endif // ACTOR_H_
