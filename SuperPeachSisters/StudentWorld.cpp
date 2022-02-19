@@ -112,18 +112,18 @@ int StudentWorld::move()
     // Notice that the return value GWSTATUS_PLAYER_DIED will cause our framework to end the current level.
     //decLives();
     //return GWSTATUS_PLAYER_DIED;
-    vector<Actor*>::iterator it;
-    for (it = m_actors.begin(); it != m_actors.end(); it++)
+    int i;
+    for (i = 0; i < m_actors.size(); i++)
     {
-        if ((*it)->alive())
+        if (m_actors[i]->alive())
         {
-            (*it)->doSomething();
+            m_actors[i]->doSomething();
             if (!m_peach->alive())
             {
                 playSound(SOUND_PLAYER_DIE);
                 return GWSTATUS_PLAYER_DIED;
             }
-            if ((*it)->goalpost() && !(*it)->alive())
+            if (m_actors[i]->goalpost() && !m_actors[i]->alive())
             {
                 if (m_finalLevel)
                 {
@@ -137,6 +137,7 @@ int StudentWorld::move()
     }
     m_peach->doSomething();
     
+    vector<Actor*>::iterator it;
     it = m_actors.begin();
     while (it != m_actors.end())
     {
@@ -150,6 +151,16 @@ int StudentWorld::move()
         else
             it++;
     }
+
+    ostringstream oss;
+    oss << "Lives: " << getLives() << "  Level: " << getLevel() << "  Points: " << getScore();
+    if (m_peach->getStarPower())
+        oss << " StarPower!";
+    if (m_peach->getShootPower())
+        oss << " ShootPower!";
+    if (m_peach->getJumpPower())
+        oss << " JumpPower!";
+    setGameStatText(oss.str());
     return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -188,6 +199,7 @@ void StudentWorld::addActor(Actor* actor)
     m_actors.insert(it, actor);
 }
 
+/*
 bool StudentWorld::isBlockingAt(double x, double y) const
 {
     bool lower;
@@ -228,7 +240,46 @@ bool StudentWorld::isBlockingAt(double x, double y) const
     // No overlapping found
     return false;
 }
+*/
+bool StudentWorld::isBlockingAt(double x, double y) const
+{
+    bool lower;
+    int i = 0;
 
+    // Use binary search based on vertical position to find the actor blocking 
+    i = actorBinarySearch(y, m_actors, i, m_actors.size() - m_numSpecialActors);
+    if (i == -1) // No vertical matches 
+        return false;
+
+    // At this point, it points to a position in actor that overlaps VERTICALLY; since Actors is sorted vertically, all that needs to be checked is the horizontally overlapping of all 
+    // Actors relative to it (because it merely found the vertical matches with the binary search it is still possible that there could be vertical matches to the left or right)
+    int j = i;
+    // Check for left overlapping
+    while (j >= 0 && overlap(y, y + SPRITE_HEIGHT - 1, m_actors[j]->getY(), m_actors[j]->getY() + SPRITE_HEIGHT - 1, lower))
+    {
+        if (overlap(x, x + SPRITE_WIDTH - 1, m_actors[j]->getX(), m_actors[j]->getX() + SPRITE_WIDTH - 1, lower))
+        {
+            if (m_actors[j]->terrain())
+                return true;
+        }
+        j--;
+    }
+    // Check for right overlapping
+    j = i + 1;
+    while (j < m_actors.size() - m_numSpecialActors && overlap(y, y + SPRITE_HEIGHT - 1, m_actors[j]->getY(), m_actors[j]->getY() + SPRITE_HEIGHT - 1, lower))
+    {
+        if (overlap(x, x + SPRITE_WIDTH - 1, m_actors[j]->getX(), m_actors[j]->getX() + SPRITE_WIDTH - 1, lower))
+        {
+            if (m_actors[j]->terrain())
+                return true;
+        }
+        j++;
+    }
+    // No overlapping found
+    return false;
+}
+
+/*
 bool StudentWorld::isDamageableAt(double x, double y) const
 {
     bool lower;
@@ -269,7 +320,44 @@ bool StudentWorld::isDamageableAt(double x, double y) const
     // No overlapping found
     return false;
 }
+*/
+bool StudentWorld::isDamageableAt(double x, double y) const
+{
+    bool lower;
+    int i = 0;
 
+    // Use binary search based on vertical position to find the actor blocking 
+    i = actorBinarySearch(y, m_actors, i, m_actors.size() - m_numSpecialActors);
+    if (i == -1) // No vertical matches 
+        return false;
+
+    // At this point, it points to a position in actor that overlaps VERTICALLY; since Actors is sorted vertically, all that needs to be checked is the horizontally overlapping of all 
+    // Actors relative to it (because it merely found the vertical matches with the binary search it is still possible that there could be vertical matches to the left or right)
+    int j = i;
+    // Check for left overlapping
+    while (j >= 0 && overlap(y, y + SPRITE_HEIGHT - 1, m_actors[j]->getY(), m_actors[j]->getY() + SPRITE_HEIGHT - 1, lower))
+    {
+        if (overlap(x, x + SPRITE_WIDTH - 1, m_actors[j]->getX(), m_actors[j]->getX() + SPRITE_WIDTH - 1, lower))
+        {
+            if (!m_actors[j]->friendly() && !m_actors[j]->projectile() && m_actors[j]->alive())
+                return true;
+        }
+        j--;
+    }
+    // Check for right overlapping
+    j = i + 1;
+    while (j < m_actors.size() - m_numSpecialActors && overlap(y, y + SPRITE_HEIGHT - 1, m_actors[j]->getY(), m_actors[j]->getY() + SPRITE_HEIGHT - 1, lower))
+    {
+        if (overlap(x, x + SPRITE_WIDTH - 1, m_actors[j]->getX(), m_actors[j]->getX() + SPRITE_WIDTH - 1, lower))
+        {
+            if (!m_actors[j]->friendly() && !m_actors[j]->projectile() && m_actors[j]->alive())
+                return true;
+        }
+        j++;
+    }
+    // No overlapping found
+    return false;
+}
 
 bool StudentWorld::isPlayerAt(double x, double y, const Actor& actor, bool bonk)
 {
@@ -291,62 +379,59 @@ void StudentWorld::getPlayerLocation(double& x, double& y) const
 
 bool StudentWorld::bonkAt(double x, double y, const Actor& actor) 
 {
+    bool bonked = false;
     bool lower;
-    vector<Actor*>::const_iterator it;
-    it = m_actors.begin();
+    int i;
     // Iterate through prioritized Actors (fireballs, goodies, etc.)
-    for (int i = 0; i < m_numSpecialActors; i++)
+    for (i = m_actors.size() - m_numSpecialActors; i < m_actors.size(); i++)
     {
-        if (overlap(x, x + SPRITE_WIDTH - 1, (*it)->getX(), (*it)->getX() + SPRITE_WIDTH - 1, lower) && overlap(y, y + SPRITE_HEIGHT - 1, (*it)->getY(), (*it)->getY() + SPRITE_HEIGHT - 1, lower))
+        if (overlap(x, x + SPRITE_WIDTH - 1, m_actors[i]->getX(), m_actors[i]->getX() + SPRITE_WIDTH - 1, lower) && overlap(y, y + SPRITE_HEIGHT - 1, m_actors[i]->getY(), m_actors[i]->getY() + SPRITE_HEIGHT - 1, lower))
         {
-            if ((*it) != &actor)
+            if (m_actors[i] != &actor)
             {
-                (*it)->getBonked(actor);
-                return true;
+                m_actors[i]->getBonked(actor);
+                bonked = true;
             }
         }
-        it++;
     }
 
     // Use binary search based on vertical position to find the actor blocking 
-    it = actorBinarySearch(y, m_actors, it, m_actors.end());
-    if (it == m_actors.end()) // No vertical matches 
+    i = actorBinarySearch(y, m_actors, 0, m_actors.size() - m_numSpecialActors);
+    if (i == -1) // No vertical matches 
         return false;
 
     // At this point, it points to a position in actor that overlaps VERTICALLY; since Actors is sorted vertically, all that needs to be checked is the horizontally overlapping of all 
     // Actors relative to it (because it merely found the vertical matches with the binary search it is still possible that there could be vertical matches to the left or right)
-    vector<Actor*>::const_iterator horizontalIt = it;
+   int j = i;
     // Check for left overlapping
-    while (horizontalIt >= m_actors.begin() && overlap(y, y + SPRITE_HEIGHT - 1, (*horizontalIt)->getY(), (*horizontalIt)->getY() + SPRITE_HEIGHT - 1, lower))
+    while (j >= 0 && overlap(y, y + SPRITE_HEIGHT - 1, m_actors[j]->getY(), m_actors[j]->getY() + SPRITE_HEIGHT - 1, lower))
     {
-        if (overlap(x, x + SPRITE_WIDTH - 1, (*horizontalIt)->getX(), (*horizontalIt)->getX() + SPRITE_WIDTH - 1, lower))
+        if (overlap(x, x + SPRITE_WIDTH - 1, m_actors[j]->getX(), m_actors[j]->getX() + SPRITE_WIDTH - 1, lower))
         {
-            if ((*horizontalIt) != &actor)
+            if (m_actors[j] != &actor)
             {
-                (*horizontalIt)->getBonked(actor);
-                return true;
+                m_actors[j]->getBonked(actor);
+                bonked = true;
             }
         }
-        if (horizontalIt == m_actors.begin())
-            break;
-        horizontalIt--;
+        j--;
     }
     // Check for right overlapping
-    horizontalIt = it + 1;
-    while (horizontalIt < m_actors.end() && overlap(y, y + SPRITE_HEIGHT - 1, (*horizontalIt)->getY(), (*horizontalIt)->getY() + SPRITE_HEIGHT - 1, lower))
+    j = i + 1;
+    while (j < m_actors.size() - m_numSpecialActors && overlap(y, y + SPRITE_HEIGHT - 1, m_actors[j]->getY(), m_actors[j]->getY() + SPRITE_HEIGHT - 1, lower))
     {
-        if (overlap(x, x + SPRITE_WIDTH - 1, (*horizontalIt)->getX(), (*horizontalIt)->getX() + SPRITE_WIDTH - 1, lower))
+        if (overlap(x, x + SPRITE_WIDTH - 1, m_actors[j]->getX(), m_actors[j]->getX() + SPRITE_WIDTH - 1, lower))
         {
-            if ((*horizontalIt) != &actor)
+            if (m_actors[j] != &actor)
             {
-                (*horizontalIt)->getBonked(actor);
-                return true;
+                m_actors[j]->getBonked(actor);
+                bonked = true;
             }
         }
-        horizontalIt++;
+        j++;
     }
     // No overlapping found
-    return false;
+    return bonked;
 }
 
 void StudentWorld::givePowerup(int powerup)
@@ -377,6 +462,7 @@ bool StudentWorld::overlap(double start1, double end1, double start2, double end
     return false;
 }
 
+/*
 vector<Actor*>::const_iterator StudentWorld::actorBinarySearch(double y, const vector<Actor*>& actors, vector<Actor*>::const_iterator start, vector<Actor*>::const_iterator end) const
 {
     if (start <= end)
@@ -393,4 +479,20 @@ vector<Actor*>::const_iterator StudentWorld::actorBinarySearch(double y, const v
     vector<Actor*>::const_iterator ret;
     ret = actors.end();
     return ret;
+}
+*/
+int StudentWorld::actorBinarySearch(double y, const vector<Actor*>& actors, int start, int end) const
+{
+    if (start <= end)
+    {
+        bool lower;
+        int mid = start + (end - start) / 2;
+        if (overlap(y, y + SPRITE_HEIGHT - 1, m_actors[mid]->getY(), m_actors[mid]->getY() + SPRITE_HEIGHT - 1, lower))
+            return mid;
+        else if (lower)
+            return actorBinarySearch(y, actors, start, mid - 1);
+        else
+            return actorBinarySearch(y, actors, mid + 1, end);
+    }
+    return -1;
 }

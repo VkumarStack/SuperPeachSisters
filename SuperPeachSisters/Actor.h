@@ -42,9 +42,10 @@ class Peach : public Actor
 public:
 	Peach(StudentWorld* world, int startX, int startY);
 	virtual void doSomething();
-	virtual void getBonked(const Actor& actor) {}
+	virtual void getBonked(const Actor& actor);
 
 	virtual bool player() const { return true; }
+	virtual bool projectile() const { return getStarPower(); }
 	int getHitPoints() const 
 	{
 		if (getJumpPower() || getShootPower())
@@ -201,7 +202,8 @@ class Enemy : public Actor
 	public:
 		Enemy(StudentWorld* world, int imageID, int startX, int startY, int direction) : Actor(world, imageID, startX, startY, direction, 1, 0) {}
 		virtual void doSomething() = 0;
-		virtual void getBonked(const Actor& actor) = 0;
+		virtual void getBonked(const Actor& actor);
+		virtual void deathAction() = 0;
 		virtual bool friendly() const { return false; }
 };
 /*------------------------------------------------------------------------------------------------------------------------------*/
@@ -210,7 +212,7 @@ class Goomba : public Enemy
 	public:
 		Goomba(StudentWorld* world, int startX, int startY, int direction) : Enemy(world, IID_GOOMBA, startX, startY, direction) {}
 		virtual void doSomething();
-		virtual void getBonked(const Actor& actor) {}
+		virtual void deathAction() {}
 };
 /*------------------------------------------------------------------------------------------------------------------------------*/
 class Koopa : public Enemy
@@ -218,15 +220,15 @@ class Koopa : public Enemy
 	public:
 		Koopa(StudentWorld* world, int startX, int startY, int direction) : Enemy(world, IID_KOOPA, startX, startY, direction) {}
 		virtual void doSomething();
-		virtual void getBonked(const Actor& actor) {}
+		virtual void deathAction();
 };
 /*------------------------------------------------------------------------------------------------------------------------------*/
 class Piranha : public Enemy
 {
 	public:
-		Piranha(StudentWorld* world, int startX, int startY, int direction) : Enemy(world, IID_PIRANHA, startX, startY, direction) { m_firingDelay = 40; }
+		Piranha(StudentWorld* world, int startX, int startY, int direction) : Enemy(world, IID_PIRANHA, startX, startY, direction) { m_firingDelay = 0; }
 		virtual void doSomething();
-		virtual void getBonked(const Actor& actor) {}
+		virtual void deathAction() {}
 		bool firingDelay() { return (m_firingDelay > 0); }
 	private:
 		int m_firingDelay;

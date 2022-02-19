@@ -35,7 +35,7 @@ private:
 	bool m_finalLevel;
 
 	bool overlap(double start1, double end1, double start2, double end2, bool& lower) const;
-	vector<Actor*>::const_iterator actorBinarySearch(double y, const vector<Actor*>& actors, vector<Actor*>::const_iterator start, vector<Actor*>::const_iterator end) const;
+	int actorBinarySearch(double y, const vector<Actor*>& actors, int start, int end) const;
 
 };
 

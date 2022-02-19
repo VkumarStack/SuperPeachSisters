@@ -15,9 +15,9 @@ bool Actor::operator<(const Actor& other) const
 	// i.e. The action of a fireball hitting an enemy should be performed first since beyond so the enemy can no longer 
 	// attack Peach if interacting with her 
 	if (priority() && !other.priority())
-		return true;
-	else if (other.priority() && !priority())
 		return false;
+	else if (other.priority() && !priority())
+		return true;
 
 	// All non-interactable Actors (meaning those that are NOT goodies, fire flowers, or peach) are intended to stay in a fixed vertical 
 	// position, so comparison can be done in terms of their vertical position (and there is no need to worry about having to rearrange 
@@ -113,6 +113,24 @@ void Peach::doSomething()
 				getStudentWorld()->addActor(new PeachFireball(getStudentWorld(), x, getY(), getDirection()));
 			}
 			break;
+		}
+	}
+}
+
+void Peach::getBonked(const Actor& actor)
+{
+	if (!actor.friendly() && !getStarPower() && !getTempInvincibility())
+	{
+		m_tempInvincibilityTicks = 10;
+		if (getHitPoints() == 2)
+		{
+			m_shootPowerTicks = -1;
+			m_jumpPower = false;
+			getStudentWorld()->playSound(SOUND_PLAYER_HURT);
+		}
+		else
+		{
+			setDead();
 		}
 	}
 }
@@ -244,6 +262,20 @@ void Projectile::doSomething()
 	}
 }
 /*------------------------------------------------------------------------------------------------------------------------------*/
+void Enemy::getBonked(const Actor& actor)
+{
+	if (actor.projectile() && actor.friendly())
+	{
+		if (actor.player())
+		{
+			getStudentWorld()->playSound(SOUND_PLAYER_KICK);
+		}
+		getStudentWorld()->increaseScore(100);
+		setDead();
+		deathAction();
+	}
+}
+/*------------------------------------------------------------------------------------------------------------------------------*/
 void Goomba::doSomething()
 {
 	if (alive())
@@ -321,6 +353,11 @@ void Koopa::doSomething()
 		}
 	}
 }
+
+void Koopa::deathAction()
+{
+	getStudentWorld()->addActor(new Shell(getStudentWorld(), getX(), getY(), getDirection()));
+}
 /*------------------------------------------------------------------------------------------------------------------------------*/
 void Piranha::doSomething()
 {
@@ -332,7 +369,7 @@ void Piranha::doSomething()
 		double peachX = -1;
 		double peachY = -1;
 		getStudentWorld()->getPlayerLocation(peachX, peachY);
-		if (peachY != -1 && (peachY <= abs(getY() - (1.5 * SPRITE_WIDTH))))
+		if (peachY != -1 && (1.5 * SPRITE_HEIGHT >= abs(peachY - getY())))
 		{
 			if (peachX != -1 && (peachX < getX()))
 				setDirection(180);
@@ -347,7 +384,7 @@ void Piranha::doSomething()
 			m_firingDelay--;
 			return;
 		}
-		if (peachX != -1 && (peachX < abs(getX() - (8 * SPRITE_WIDTH))))
+		if (peachX != -1 && (SPRITE_WIDTH * 8 > abs(peachX - getX())))
 		{
 			getStudentWorld()->addActor(new PiranhaFireball(getStudentWorld(), getX(), getY(), getDirection()));
 			getStudentWorld()->playSound(SOUND_PIRANHA_FIRE);
