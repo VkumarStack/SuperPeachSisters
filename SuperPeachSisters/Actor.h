@@ -45,14 +45,29 @@ public:
 	virtual void getBonked(const Actor& actor) {}
 
 	virtual bool player() const { return true; }
-	int getHitPoints() const { return m_hitPoints; }
+	int getHitPoints() const 
+	{
+		if (getJumpPower() || getShootPower())
+			return 2;
+		return 1;
+	}
 	int getJumping()  const { return (m_remainingJumpDistance > 0); }
 	bool getJumpPower() const { return m_jumpPower; }
 	bool getShootPower() const { return m_shootPowerTicks != -1; }
 	bool getStarPower() const { return m_starPowerTicks != 0; }
 	bool getTempInvincibility() const { return m_tempInvincibilityTicks != 0; }
+	void giveJumpPower() { m_jumpPower = true; }
+	void giveShootPower() 
+	{
+		if (!getShootPower())
+			m_shootPowerTicks = 8;
+	}
+	void giveStarPower()
+	{
+		if (!getStarPower())
+			m_starPowerTicks = 150;
+	}
 private:
-	int m_hitPoints;
 	int m_remainingJumpDistance;
 	bool m_jumpPower;
 	int m_shootPowerTicks;
@@ -114,4 +129,70 @@ public:
 	virtual void doSomething();
 };
 
+/*------------------------------------------------------------------------------------------------------------------------------*/
+class Powerup : public Actor
+{
+	public:
+		Powerup(StudentWorld* world, int imageID, int startX, int startY, int powerup) : Actor(world, imageID, startX, startY, 0, 1, 1) { m_powerup = powerup; }
+		virtual void doSomething();
+		virtual void getBonked(const Actor& actor) {}
+		virtual int score() const = 0;
+		virtual bool powerup(int& powerupType) const 
+		{ 
+			powerupType = m_powerup;
+			return true; 
+		}
+	private:
+		int m_powerup;
+};
+
+/*------------------------------------------------------------------------------------------------------------------------------*/
+class Mushroom : public Powerup
+{
+	public:
+		Mushroom(StudentWorld* world, int startX, int startY) : Powerup(world, IID_MUSHROOM, startX, startY, 1) {}
+		virtual int score() const { return 75; }
+};
+/*------------------------------------------------------------------------------------------------------------------------------*/
+class Flower : public Powerup
+{
+	public:
+		Flower(StudentWorld* world, int startX, int startY) : Powerup(world, IID_FLOWER, startX, startY, 2) {}
+		virtual int score() const { return 50; }
+};
+/*------------------------------------------------------------------------------------------------------------------------------*/
+class Star : public Powerup
+{
+	public:
+		Star(StudentWorld* world, int startX, int startY) : Powerup(world, IID_STAR, startX, startY, 3) {}
+		virtual int score() const { return 100; }
+};
+/*------------------------------------------------------------------------------------------------------------------------------*/
+class Projectile : public Actor
+{
+	public:
+		Projectile(StudentWorld* world, int imageID, int startX, int startY, int direction) : Actor(world, imageID, startX, startY, direction, 1, 1) {}
+		virtual void doSomething();
+		virtual void getBonked(const Actor& actor) {}
+		virtual bool projectile() const { return true; }
+};
+/*------------------------------------------------------------------------------------------------------------------------------*/
+class PiranhaFireball : public Projectile
+{
+	public:
+		PiranhaFireball(StudentWorld* world, int startX, int startY, int direction) : Projectile(world, IID_PIRANHA_FIRE, startX, startY, direction) {}
+		virtual bool friendly() const { return false; }
+};
+/*------------------------------------------------------------------------------------------------------------------------------*/
+class PeachFireball : public Projectile
+{
+	public:
+		PeachFireball(StudentWorld* world, int startX, int startY, int direction) : Projectile(world, IID_PEACH_FIRE, startX, startY, direction) {}
+};
+/*------------------------------------------------------------------------------------------------------------------------------*/
+class Shell : public Projectile
+{
+	public:
+		Shell(StudentWorld* world, int startX, int startY, int direction) : Projectile(world, IID_SHELL, startX, startY, direction) {}
+};
 #endif // ACTOR_H_

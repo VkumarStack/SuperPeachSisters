@@ -9,6 +9,7 @@ using namespace std;
 
 // Students:  Add code to this file, StudentWorld.cpp, Actor.h, and Actor.cpp;
 class Actor;
+class Peach;
 class StudentWorld : public GameWorld
 {
 public:
@@ -19,11 +20,13 @@ public:
 	virtual void cleanUp();
 	void addActor(Actor* actor);
 	bool isBlockingAt(double x, double y, const Actor& actor, bool bonk) const;
-	bool playerAt(double x, double y, Actor*& actor) const;
+	bool playerAt(double x, double y, const Actor& actor, bool bonk) const;
+	void givePowerup(int powerup);
 	void setFinalLevel() { m_finalLevel = true; }
 
+
 private:
-	Actor* m_peach;
+	Peach* m_peach;
 	vector<Actor*> m_actors;
 	int m_numSpecialActors;
 	bool m_finalLevel;

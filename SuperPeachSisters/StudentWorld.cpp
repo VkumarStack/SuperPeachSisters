@@ -52,8 +52,14 @@ int StudentWorld::init()
                     m_peach = new Peach(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT);
                     break;
                 case Level::mushroom_goodie_block:
+                    addActor(new Block(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT, 1));
+                    break;
                 case Level::flower_goodie_block:
+                    addActor(new Block(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT, 2));
+                    break;
                 case Level::star_goodie_block:
+                    addActor(new Block(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT, 3));
+                    break;
                 case Level::block:
                     addActor(new Block(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT, 0));
                     break;
@@ -90,17 +96,36 @@ int StudentWorld::move()
         if ((*it)->alive())
         {
             (*it)->doSomething();
-            if (/*(*it)->stationary() && (*it)->usable() && (*it)->friendly() && */!(*it)->alive())
+            if (!m_peach->alive())
             {
-                cerr << "CALLING" << endl;
+                playSound(SOUND_PLAYER_DIE);
+                return GWSTATUS_PLAYER_DIED;
+            }
+            if ((*it)->goalpost() && !(*it)->alive())
+            {
                 if (m_finalLevel)
+                {
+                    playSound(SOUND_GAME_OVER);
                     return GWSTATUS_PLAYER_WON;
+                }
+                playSound(SOUND_FINISHED_LEVEL);
                 return GWSTATUS_FINISHED_LEVEL;
             }
         }
     }
-    if (m_peach->alive())
-        m_peach->doSomething();
+    m_peach->doSomething();
+    
+    it = m_actors.begin();
+    while (it != m_actors.end())
+    {
+        if (!(*it)->alive())
+        {
+            delete* it;
+            it = m_actors.erase(it);
+        }
+        else
+            it++;
+    }
     return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -145,23 +170,24 @@ bool StudentWorld::isBlockingAt(double x, double y, const Actor& actor, bool bon
     vector<Actor*>::const_iterator it;
     it = m_actors.begin();
     // Iterate through prioritized Actors (fireballs, goodies, etc.)
-    for (int i = 0; i < m_numSpecialActors; i++)
+    if (bonk)
     {
-        if (overlap(x, x + SPRITE_WIDTH - 1, (*it)->getX(), (*it)->getX() + SPRITE_WIDTH - 1, lower) && overlap(y, y + SPRITE_HEIGHT - 1, (*it)->getY(), (*it)->getY() + SPRITE_HEIGHT - 1, lower))
+        for (int i = 0; i < m_numSpecialActors; i++)
         {
-            if (bonk)
+            if (overlap(x, x + SPRITE_WIDTH - 1, (*it)->getX(), (*it)->getX() + SPRITE_WIDTH - 1, lower) && overlap(y, y + SPRITE_HEIGHT - 1, (*it)->getY(), (*it)->getY() + SPRITE_HEIGHT - 1, lower))
+            {
                 (*it)->getBonked(actor);
-            if ((*it)->terrain())
                 return true;
-            return false;
+            }
+            it++;
         }
-        it++;
     }
 
     // Use binary search based on vertical position to find the actor blocking 
     it = actorBinarySearch(y, m_actors, it, m_actors.end());
     if (it == m_actors.end()) // No vertical matches 
         return false;
+
     // At this point, it points to a position in actor that overlaps VERTICALLY; since Actors is sorted vertically, all that needs to be checked is the horizontally overlapping of all 
     // Actors relative to it (because it merely found the vertical matches with the binary search it is still possible that there could be vertical matches to the left or right)
     vector<Actor*>::const_iterator horizontalIt = it;
@@ -171,10 +197,12 @@ bool StudentWorld::isBlockingAt(double x, double y, const Actor& actor, bool bon
         if (overlap(x, x + SPRITE_WIDTH - 1, (*horizontalIt)->getX(), (*horizontalIt)->getX() + SPRITE_WIDTH - 1, lower))
         {
             if (bonk)
+            {
                 (*horizontalIt)->getBonked(actor);
+                return true;
+            }
             if ((*horizontalIt)->terrain())
                 return true;
-            return false;
         }
         if (horizontalIt == m_actors.begin())
             break;
@@ -187,10 +215,12 @@ bool StudentWorld::isBlockingAt(double x, double y, const Actor& actor, bool bon
         if (overlap(x, x + SPRITE_WIDTH - 1, (*horizontalIt)->getX(), (*horizontalIt)->getX() + SPRITE_WIDTH - 1, lower))
         {
             if (bonk)
+            {
                 (*horizontalIt)->getBonked(actor);
+                return true;
+            }
             if ((*horizontalIt)->terrain())
                 return true;
-            return false;
         }
         horizontalIt++;
     }
@@ -198,15 +228,32 @@ bool StudentWorld::isBlockingAt(double x, double y, const Actor& actor, bool bon
     return false;
 }
 
-bool StudentWorld::playerAt(double x, double y, Actor*& actor) const
+bool StudentWorld::playerAt(double x, double y, const Actor& actor, bool bonk) const
 {
     bool lower;
     if (overlap(x, x + SPRITE_WIDTH - 1, m_peach->getX(), m_peach->getX() + SPRITE_WIDTH - 1, lower) && overlap(y, y + SPRITE_HEIGHT - 1, m_peach->getY(), m_peach->getY() + SPRITE_HEIGHT - 1, lower))
     {
-        actor = m_peach;
+        if (bonk)
+            m_peach->getBonked(actor);
         return true;
     }
     return false;
+}
+
+void StudentWorld::givePowerup(int powerup)
+{
+    switch (powerup)
+    {
+        case 1:
+            m_peach->giveJumpPower();
+            break;
+        case 2:
+            m_peach->giveShootPower();
+            break;
+        case 3:
+            m_peach->giveStarPower();
+            break;
+    }
 }
 
 bool StudentWorld::overlap(double start1, double end1, double start2, double end2, bool& lower /*if (start1, end1) is lower than (start2, end2)*/) const

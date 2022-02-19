@@ -31,7 +31,6 @@ bool Actor::operator<(const Actor& other) const
 
 Peach::Peach(StudentWorld* world, int startX, int startY) : Actor(world, IID_PEACH, startX, startY, 0)
 {
-	m_hitPoints = 1;
 	m_remainingJumpDistance = 0;
 	m_jumpPower = false;
 	m_shootPowerTicks = -1;
@@ -54,8 +53,11 @@ void Peach::doSomething()
 
 	if (getJumping())
 	{
-		if (getStudentWorld()->isBlockingAt(getX(), getY() + 4, *this, true))
+		if (getStudentWorld()->isBlockingAt(getX(), getY() + 4, *this, false))
+		{
 			m_remainingJumpDistance = 0;
+			getStudentWorld()->isBlockingAt(getX(), getY() + 4, *this, true);
+		}
 		else
 		{
 			moveTo(getX(), getY() + 4);
@@ -77,13 +79,17 @@ void Peach::doSomething()
 		{
 		case KEY_PRESS_LEFT:
 			setDirection(180);
-			if (!getStudentWorld()->isBlockingAt(getX() - 4, getY(), *this, true))
+			if (!getStudentWorld()->isBlockingAt(getX() - 4, getY(), *this, false))
 				moveTo(getX() - 4, getY());
+			else
+				getStudentWorld()->isBlockingAt(getX() - 4, getY(), *this, true);
 			break;
 		case KEY_PRESS_RIGHT:
 			setDirection(0);
-			if (!getStudentWorld()->isBlockingAt(getX() + 4, getY(), *this, true))
+			if (!getStudentWorld()->isBlockingAt(getX() + 4, getY(), *this, false))
 				moveTo(getX() + 4, getY());
+			else
+				getStudentWorld()->isBlockingAt(getX() + 4, getY(), *this, true);
 			break;
 		case KEY_PRESS_UP:
 			if (getStudentWorld()->isBlockingAt(getX(), getY() - 1, *this, false))
@@ -120,7 +126,23 @@ void Block::getBonked(const Actor& actor)
 	{
 		if (m_containsGoodie == 0)
 			getStudentWorld()->playSound(SOUND_PLAYER_BONK);
-		// TODO IMPLEMENT POWERUPS
+		else
+		{
+			getStudentWorld()->playSound(SOUND_POWERUP_APPEARS);
+			switch (m_containsGoodie)
+			{
+				case 1:
+					getStudentWorld()->addActor(new Mushroom(getStudentWorld(), getX(), getY() + 8));
+					break;
+				case 2:
+					getStudentWorld()->addActor(new Flower(getStudentWorld(), getX(), getY() + 8));
+					break;
+				case 3:
+					getStudentWorld()->addActor(new Star(getStudentWorld(), getX(), getY() + 8));
+					break;
+			}
+			m_containsGoodie = 0;
+		}
 	}
 }
 
@@ -129,8 +151,7 @@ void Flag::doSomething()
 {
 	if (alive())
 	{
-		Actor* actor;
-		if (getStudentWorld()->playerAt(getX(), getY(), actor))
+		if (getStudentWorld()->playerAt(getX(), getY(), *this, false))
 		{
 			getStudentWorld()->increaseScore(1000);
 			setDead();
@@ -142,12 +163,51 @@ void Mario::doSomething()
 {
 	if (alive())
 	{
-		Actor* actor = nullptr;
-		if (getStudentWorld()->playerAt(getX(), getY(), actor))
+		if (getStudentWorld()->playerAt(getX(), getY(), *this, false))
 		{
 			getStudentWorld()->increaseScore(1000);
 			setDead();
 			getStudentWorld()->setFinalLevel();
 		}
+	}
+}
+/*------------------------------------------------------------------------------------------------------------------------------*/
+void Powerup::doSomething()
+{
+	if (getStudentWorld()->playerAt(getX(), getY(), *this, false))
+	{
+		getStudentWorld()->increaseScore(score());
+		getStudentWorld()->givePowerup(m_powerup);
+		setDead();
+		getStudentWorld()->playSound(SOUND_PLAYER_POWERUP);
+		return;
+	}
+
+	if (!(((getStudentWorld()->isBlockingAt(getX(), getY(), *this, false))
+		|| (getStudentWorld()->isBlockingAt(getX(), getY() - 1, *this, false))
+		)))
+		moveTo(getX(), getY() - 2);
+	
+	if (getDirection() == 180)
+	{
+		if (!getStudentWorld()->isBlockingAt(getX() - 2, getY(), *this, false))
+			moveTo(getX() - 2, getY());
+		else
+			setDirection(0);
+	}
+	else
+	{
+		if (!getStudentWorld()->isBlockingAt(getX() + 2, getY(), *this, false))
+			moveTo(getX() + 2, getY());
+		else
+			setDirection(180);
+	}
+}
+/*------------------------------------------------------------------------------------------------------------------------------*/
+void Projectile::doSomething()
+{
+	if (friendly())
+	{
+
 	}
 }
