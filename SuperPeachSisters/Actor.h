@@ -195,4 +195,40 @@ class Shell : public Projectile
 	public:
 		Shell(StudentWorld* world, int startX, int startY, int direction) : Projectile(world, IID_SHELL, startX, startY, direction) {}
 };
+/*------------------------------------------------------------------------------------------------------------------------------*/
+class Enemy : public Actor
+{
+	public:
+		Enemy(StudentWorld* world, int imageID, int startX, int startY, int direction) : Actor(world, imageID, startX, startY, direction, 1, 0) {}
+		virtual void doSomething() = 0;
+		virtual void getBonked(const Actor& actor) = 0;
+		virtual bool friendly() const { return false; }
+};
+/*------------------------------------------------------------------------------------------------------------------------------*/
+class Goomba : public Enemy
+{
+	public:
+		Goomba(StudentWorld* world, int startX, int startY, int direction) : Enemy(world, IID_GOOMBA, startX, startY, direction) {}
+		virtual void doSomething();
+		virtual void getBonked(const Actor& actor) {}
+};
+/*------------------------------------------------------------------------------------------------------------------------------*/
+class Koopa : public Enemy
+{
+	public:
+		Koopa(StudentWorld* world, int startX, int startY, int direction) : Enemy(world, IID_KOOPA, startX, startY, direction) {}
+		virtual void doSomething();
+		virtual void getBonked(const Actor& actor) {}
+};
+/*------------------------------------------------------------------------------------------------------------------------------*/
+class Piranha : public Enemy
+{
+	public:
+		Piranha(StudentWorld* world, int startX, int startY, int direction) : Enemy(world, IID_PIRANHA, startX, startY, direction) { m_firingDelay = 40; }
+		virtual void doSomething();
+		virtual void getBonked(const Actor& actor) {}
+		bool firingDelay() { return (m_firingDelay > 0); }
+	private:
+		int m_firingDelay;
+};
 #endif // ACTOR_H_

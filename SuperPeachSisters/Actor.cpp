@@ -1,5 +1,6 @@
 #include "Actor.h"
 #include "StudentWorld.h"
+#include <cmath>
 
 // Students:  Add code to this file, Actor.h, StudentWorld.h, and StudentWorld.cpp
 Actor::Actor(StudentWorld* world, int imageID, int startX, int startY, int dir, int depth, double size) : GraphObject(imageID, startX, startY, dir, depth, size)
@@ -104,8 +105,12 @@ void Peach::doSomething()
 			{
 				getStudentWorld()->playSound(SOUND_PLAYER_FIRE);
 				m_shootPowerTicks = 8;
-				// TO DO
-				// getStudentWorld()->addActor(new PeachFireball(...))
+				int x;
+				if (getDirection() == 0)
+					x = getX() + 4;
+				else
+					x = getX() - 4;
+				getStudentWorld()->addActor(new PeachFireball(getStudentWorld(), x, getY(), getDirection()));
 			}
 			break;
 		}
@@ -204,6 +209,150 @@ void Projectile::doSomething()
 {
 	if (friendly())
 	{
+		if (getStudentWorld()->isDamageableAt(getX(), getY()))
+		{
+			getStudentWorld()->bonkAt(getX(), getY(), *this);
+			setDead();
+			return;
+		}
+	}
+	else
+	{
+		if (getStudentWorld()->isPlayerAt(getX(), getY(), *this, true))
+		{
+			setDead();
+			return;
+		}
+	}
+
+	if (!(getStudentWorld()->isBlockingAt(getX(), getY()) || getStudentWorld()->isBlockingAt(getX(), getY() - 1)))
+		moveTo(getX(), getY() - 2);
+
+	if (getDirection() == 180)
+	{
+		if (!getStudentWorld()->isBlockingAt(getX() - 2, getY()))
+			moveTo(getX() - 2, getY());
+		else
+			setDead();
+	}
+	else
+	{
+		if (!getStudentWorld()->isBlockingAt(getX() + 2, getY()))
+			moveTo(getX() + 2, getY());
+		else
+			setDead();
+	}
+}
+/*------------------------------------------------------------------------------------------------------------------------------*/
+void Goomba::doSomething()
+{
+	if (alive())
+	{
+		if (getStudentWorld()->isPlayerAt(getX(), getY(), *this, true))
+			return;
+		int mvt;
+		if (getDirection() == 0)
+			mvt = getX() + 1;
+		else
+			mvt = getX() - 1;
+		if (getStudentWorld()->isBlockingAt(mvt, getY()))
+		{
+			if (getDirection() == 0)
+				setDirection(180);
+			else
+				setDirection(0);
+		}
+		else if (!getStudentWorld()->isBlockingAt(mvt, getY() - 1))
+		{
+			if (getDirection() == 0)
+				setDirection(180);
+			else
+				setDirection(0);
+		}
+
+		if (getDirection() == 180)
+		{
+			if (!getStudentWorld()->isBlockingAt(getX() - 1, getY()))
+				moveTo(getX() - 1, getY());
+		}
+		else
+		{
+			if (!getStudentWorld()->isBlockingAt(getX() + 1, getY()))
+				moveTo(getX() + 1, getY());
+		}
+	}
+}
+/*------------------------------------------------------------------------------------------------------------------------------*/
+void Koopa::doSomething()
+{
+	if (alive())
+	{
+		if (getStudentWorld()->isPlayerAt(getX(), getY(), *this, true))
+			return;
+		int mvt;
+		if (getDirection() == 0)
+			mvt = getX() + 1;
+		else
+			mvt = getX() - 1;
+		if (getStudentWorld()->isBlockingAt(mvt, getY()))
+		{
+			if (getDirection() == 0)
+				setDirection(180);
+			else
+				setDirection(0);
+		}
+		else if (!getStudentWorld()->isBlockingAt(mvt, getY() - 1))
+		{
+			if (getDirection() == 0)
+				setDirection(180);
+			else
+				setDirection(0);
+		}
+
+		if (getDirection() == 180)
+		{
+			if (!getStudentWorld()->isBlockingAt(getX() - 1, getY()))
+				moveTo(getX() - 1, getY());
+		}
+		else
+		{
+			if (!getStudentWorld()->isBlockingAt(getX() + 1, getY()))
+				moveTo(getX() + 1, getY());
+		}
+	}
+}
+/*------------------------------------------------------------------------------------------------------------------------------*/
+void Piranha::doSomething()
+{
+	if (alive())
+	{
+		increaseAnimationNumber();
+		if (getStudentWorld()->isPlayerAt(getX(), getY(), *this, true))
+			return;
+		double peachX = -1;
+		double peachY = -1;
+		getStudentWorld()->getPlayerLocation(peachX, peachY);
+		if (peachY != -1 && (peachY <= abs(getY() - (1.5 * SPRITE_WIDTH))))
+		{
+			if (peachX != -1 && (peachX < getX()))
+				setDirection(180);
+			else if (peachX != -1)
+				setDirection(0);
+		}
+		else
+			return;
+
+		if (firingDelay())
+		{
+			m_firingDelay--;
+			return;
+		}
+		if (peachX != -1 && (peachX < abs(getX() - (8 * SPRITE_WIDTH))))
+		{
+			getStudentWorld()->addActor(new PiranhaFireball(getStudentWorld(), getX(), getY(), getDirection()));
+			getStudentWorld()->playSound(SOUND_PIRANHA_FIRE);
+			m_firingDelay = 40;
+		}
 
 	}
 }

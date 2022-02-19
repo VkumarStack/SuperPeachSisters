@@ -41,6 +41,7 @@ int StudentWorld::init()
     if (result == Level::load_success)
     {
         Level::GridEntry ge;
+        int dir;
         for (int w = 0; w < GRID_WIDTH; w++)
         {
             for (int c = 0; c < GRID_HEIGHT; c++)
@@ -71,6 +72,27 @@ int StudentWorld::init()
                     break;
                 case Level::mario:
                     addActor(new Mario(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT));
+                    break;
+                case Level::goomba:
+                    dir = rand() % 2;
+                    if (dir == 0)
+                        addActor(new Goomba(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT, 0));
+                    else
+                        addActor(new Goomba(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT, 180));
+                    break;
+                case Level::koopa:
+                    dir = rand() % 2;
+                    if (dir == 0)
+                        addActor(new Koopa(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT, 0));
+                    else
+                        addActor(new Koopa(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT, 180));
+                    break;
+                case Level::piranha:
+                    dir = rand() % 2;
+                    if (dir == 0)
+                        addActor(new Piranha(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT, 0));
+                    else
+                        addActor(new Piranha(this, w * SPRITE_WIDTH, c * SPRITE_HEIGHT, 180));
                     break;
                 }
             }
@@ -120,6 +142,8 @@ int StudentWorld::move()
     {
         if (!(*it)->alive())
         {
+            if ((*it)->priority())
+                m_numSpecialActors--;
             delete* it;
             it = m_actors.erase(it);
         }
@@ -259,6 +283,12 @@ bool StudentWorld::isPlayerAt(double x, double y, const Actor& actor, bool bonk)
     return false;
 }
 
+void StudentWorld::getPlayerLocation(double& x, double& y) const
+{
+    x = m_peach->getX();
+    y = m_peach->getY();
+}
+
 bool StudentWorld::bonkAt(double x, double y, const Actor& actor) 
 {
     bool lower;
@@ -269,8 +299,11 @@ bool StudentWorld::bonkAt(double x, double y, const Actor& actor)
     {
         if (overlap(x, x + SPRITE_WIDTH - 1, (*it)->getX(), (*it)->getX() + SPRITE_WIDTH - 1, lower) && overlap(y, y + SPRITE_HEIGHT - 1, (*it)->getY(), (*it)->getY() + SPRITE_HEIGHT - 1, lower))
         {
-            (*it)->getBonked(actor);
-            return true;
+            if ((*it) != &actor)
+            {
+                (*it)->getBonked(actor);
+                return true;
+            }
         }
         it++;
     }
@@ -288,8 +321,11 @@ bool StudentWorld::bonkAt(double x, double y, const Actor& actor)
     {
         if (overlap(x, x + SPRITE_WIDTH - 1, (*horizontalIt)->getX(), (*horizontalIt)->getX() + SPRITE_WIDTH - 1, lower))
         {
-            (*horizontalIt)->getBonked(actor);
-            return true;
+            if ((*horizontalIt) != &actor)
+            {
+                (*horizontalIt)->getBonked(actor);
+                return true;
+            }
         }
         if (horizontalIt == m_actors.begin())
             break;
@@ -301,8 +337,11 @@ bool StudentWorld::bonkAt(double x, double y, const Actor& actor)
     {
         if (overlap(x, x + SPRITE_WIDTH - 1, (*horizontalIt)->getX(), (*horizontalIt)->getX() + SPRITE_WIDTH - 1, lower))
         {
-            (*horizontalIt)->getBonked(actor);
-            return true;
+            if ((*horizontalIt) != &actor)
+            {
+                (*horizontalIt)->getBonked(actor);
+                return true;
+            }
         }
         horizontalIt++;
     }

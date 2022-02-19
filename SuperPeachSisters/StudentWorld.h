@@ -22,6 +22,7 @@ public:
 	bool isBlockingAt(double x, double y) const;
 	bool isDamageableAt(double x, double y) const;
 	bool isPlayerAt(double x, double y, const Actor& actor, bool bonk);
+	void getPlayerLocation(double& x, double& y) const;
 	bool bonkAt(double x, double y, const Actor& actor);
 	void givePowerup(int powerup);
 	void setFinalLevel() { m_finalLevel = true; }
