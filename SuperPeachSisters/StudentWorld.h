@@ -19,8 +19,10 @@ public:
 	virtual int move();
 	virtual void cleanUp();
 	void addActor(Actor* actor);
-	bool isBlockingAt(double x, double y, const Actor& actor, bool bonk) const;
-	bool playerAt(double x, double y, const Actor& actor, bool bonk) const;
+	bool isBlockingAt(double x, double y) const;
+	bool isDamageableAt(double x, double y) const;
+	bool isPlayerAt(double x, double y, const Actor& actor, bool bonk);
+	bool bonkAt(double x, double y, const Actor& actor);
 	void givePowerup(int powerup);
 	void setFinalLevel() { m_finalLevel = true; }
 

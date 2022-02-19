@@ -49,14 +49,14 @@ void Peach::doSomething()
 	if (m_shootPowerTicks > 0)
 		m_shootPowerTicks--;
 
-	getStudentWorld()->isBlockingAt(getX(), getY(), *this, true);
+	getStudentWorld()->bonkAt(getX(), getY(), *this);
 
 	if (getJumping())
 	{
-		if (getStudentWorld()->isBlockingAt(getX(), getY() + 4, *this, false))
+		if (getStudentWorld()->isBlockingAt(getX(), getY() + 4))
 		{
 			m_remainingJumpDistance = 0;
-			getStudentWorld()->isBlockingAt(getX(), getY() + 4, *this, true);
+			getStudentWorld()->bonkAt(getX(), getY() + 4, *this);
 		}
 		else
 		{
@@ -66,9 +66,7 @@ void Peach::doSomething()
 	}
 	else
 	{
-		if (!(((getStudentWorld()->isBlockingAt(getX(), getY(), *this, false))
-			|| (getStudentWorld()->isBlockingAt(getX(), getY() - 3, *this, false))
-			)))
+		if (!(getStudentWorld()->isBlockingAt(getX(), getY()) || getStudentWorld()->isBlockingAt(getX(), getY() - 3)))
 			moveTo(getX(), getY() - 4);
 	}
 
@@ -79,20 +77,20 @@ void Peach::doSomething()
 		{
 		case KEY_PRESS_LEFT:
 			setDirection(180);
-			if (!getStudentWorld()->isBlockingAt(getX() - 4, getY(), *this, false))
+			if (!getStudentWorld()->isBlockingAt(getX() - 4, getY()))
 				moveTo(getX() - 4, getY());
 			else
-				getStudentWorld()->isBlockingAt(getX() - 4, getY(), *this, true);
+				getStudentWorld()->bonkAt(getX() - 4, getY(), *this);
 			break;
 		case KEY_PRESS_RIGHT:
 			setDirection(0);
-			if (!getStudentWorld()->isBlockingAt(getX() + 4, getY(), *this, false))
+			if (!getStudentWorld()->isBlockingAt(getX() + 4, getY()))
 				moveTo(getX() + 4, getY());
 			else
-				getStudentWorld()->isBlockingAt(getX() + 4, getY(), *this, true);
+				getStudentWorld()->bonkAt(getX() + 4, getY(), *this);
 			break;
 		case KEY_PRESS_UP:
-			if (getStudentWorld()->isBlockingAt(getX(), getY() - 1, *this, false))
+			if (getStudentWorld()->isBlockingAt(getX(), getY() - 1))
 			{
 				if (getJumpPower())
 					m_remainingJumpDistance = 12;
@@ -151,7 +149,7 @@ void Flag::doSomething()
 {
 	if (alive())
 	{
-		if (getStudentWorld()->playerAt(getX(), getY(), *this, false))
+		if (getStudentWorld()->isPlayerAt(getX(), getY(), *this, false))
 		{
 			getStudentWorld()->increaseScore(1000);
 			setDead();
@@ -163,7 +161,7 @@ void Mario::doSomething()
 {
 	if (alive())
 	{
-		if (getStudentWorld()->playerAt(getX(), getY(), *this, false))
+		if (getStudentWorld()->isPlayerAt(getX(), getY(), *this, false))
 		{
 			getStudentWorld()->increaseScore(1000);
 			setDead();
@@ -174,7 +172,7 @@ void Mario::doSomething()
 /*------------------------------------------------------------------------------------------------------------------------------*/
 void Powerup::doSomething()
 {
-	if (getStudentWorld()->playerAt(getX(), getY(), *this, false))
+	if (getStudentWorld()->isPlayerAt(getX(), getY(), *this, false))
 	{
 		getStudentWorld()->increaseScore(score());
 		getStudentWorld()->givePowerup(m_powerup);
@@ -183,21 +181,19 @@ void Powerup::doSomething()
 		return;
 	}
 
-	if (!(((getStudentWorld()->isBlockingAt(getX(), getY(), *this, false))
-		|| (getStudentWorld()->isBlockingAt(getX(), getY() - 1, *this, false))
-		)))
+	if (!(getStudentWorld()->isBlockingAt(getX(), getY()) || getStudentWorld()->isBlockingAt(getX(), getY() - 1)))
 		moveTo(getX(), getY() - 2);
 	
 	if (getDirection() == 180)
 	{
-		if (!getStudentWorld()->isBlockingAt(getX() - 2, getY(), *this, false))
+		if (!getStudentWorld()->isBlockingAt(getX() - 2, getY()))
 			moveTo(getX() - 2, getY());
 		else
 			setDirection(0);
 	}
 	else
 	{
-		if (!getStudentWorld()->isBlockingAt(getX() + 2, getY(), *this, false))
+		if (!getStudentWorld()->isBlockingAt(getX() + 2, getY()))
 			moveTo(getX() + 2, getY());
 		else
 			setDirection(180);
