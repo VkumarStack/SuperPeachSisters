@@ -283,10 +283,17 @@ void Goomba::doSomething()
 		if (getStudentWorld()->isPlayerAt(getX(), getY(), *this, true))
 			return;
 		int mvt;
+		int partialBlock;
 		if (getDirection() == 0)
+		{
 			mvt = getX() + 1;
+			partialBlock = getX() + SPRITE_WIDTH;
+		}
 		else
+		{
 			mvt = getX() - 1;
+			partialBlock = getX() - SPRITE_WIDTH;
+		}
 		if (getStudentWorld()->isBlockingAt(mvt, getY()))
 		{
 			if (getDirection() == 0)
@@ -294,7 +301,7 @@ void Goomba::doSomething()
 			else
 				setDirection(0);
 		}
-		else if (!getStudentWorld()->isBlockingAt(mvt, getY() - 1))
+		else if (!getStudentWorld()->isBlockingAt(partialBlock, getY() - 1))
 		{
 			if (getDirection() == 0)
 				setDirection(180);
