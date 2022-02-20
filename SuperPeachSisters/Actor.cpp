@@ -392,7 +392,7 @@ void Piranha::doSomething()
 		}
 		else
 			return;
-
+		//test 
 		if (firingDelay())
 		{
 			m_firingDelay--;
