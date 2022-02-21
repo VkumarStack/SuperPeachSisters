@@ -259,23 +259,6 @@ void Projectile::doSomething()
 	}
 }
 /*------------------------------------------------------------------------------------------------------------------------------*/
-void Enemy::getBonked(const Actor& actor)
-{
-	// An enemy will get bonked (die) if it contacts a projectile from a FRIENDLY source
-	// Note that if Peach has a Star power, she is considered to be a projectile for its duration, so she will bonk an enemy in the same way as a 
-	// PeachFireball would 
-	if (actor.projectile() && actor.friendly())
-	{
-		if (actor.player())
-		{
-			getStudentWorld()->playSound(SOUND_PLAYER_KICK);
-		}
-		getStudentWorld()->increaseScore(100);
-		setDead();
-		deathAction(); // A Koopa has a special death action of spawning a shell 
-	}
-}
-/*------------------------------------------------------------------------------------------------------------------------------*/
 void Enemy::doSomething()
 {
 	if (alive())
@@ -324,6 +307,24 @@ void Enemy::doSomething()
 		}
 	}
 }
+
+void Enemy::getBonked(const Actor& actor)
+{
+	// An enemy will get bonked (die) if it contacts a projectile from a FRIENDLY source
+	// Note that if Peach has a Star power, she is considered to be a projectile for its duration, so she will bonk an enemy in the same way as a 
+	// PeachFireball would 
+	if (actor.projectile() && actor.friendly())
+	{
+		if (actor.player())
+		{
+			getStudentWorld()->playSound(SOUND_PLAYER_KICK);
+		}
+		getStudentWorld()->increaseScore(100);
+		setDead();
+		deathAction(); // A Koopa has a special death action of spawning a shell 
+	}
+}
+
 /*------------------------------------------------------------------------------------------------------------------------------*/
 void Koopa::deathAction()
 {

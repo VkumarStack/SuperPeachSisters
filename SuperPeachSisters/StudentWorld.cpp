@@ -99,7 +99,7 @@ int StudentWorld::init()
     }
     else
     {
-        exit(1);
+        return GWSTATUS_LEVEL_ERROR;
     }
 
     return GWSTATUS_CONTINUE_GAME;
