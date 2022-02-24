@@ -164,7 +164,7 @@ class Mario : public Goalpost
 class Powerup : public Actor
 {
 	public:
-		Powerup(StudentWorld* world, int imageID, int startX, int startY, int powerup) : Actor(world, imageID, startX, startY, 0, 1, 1) { m_powerup = powerup; }
+		Powerup(StudentWorld* world, int imageID, int startX, int startY) : Actor(world, imageID, startX, startY, 0, 1, 1) {}
 		// All powerups share the same doSomething() functionality 
 		virtual void doSomething();
 		virtual void getBonked(const Actor& actor) {}
@@ -173,32 +173,39 @@ class Powerup : public Actor
 	protected:
 		// Powerups differ in the score that they give 
 		virtual int score() const = 0;
+		virtual int typePowerUp() const = 0; // Identify exactly which Powerup it is; 1 = Mushroom, 2 = Flower, 3 = Star
 	
-	private:
-		// Member variable only for reference by the Powerup class itself 
-		int m_powerup;
 };
 
 /*------------------------------------------------------------------------------------------------------------------------------*/
 class Mushroom : public Powerup
 {
 	public:
-		Mushroom(StudentWorld* world, int startX, int startY) : Powerup(world, IID_MUSHROOM, startX, startY, 1) {}
+		Mushroom(StudentWorld* world, int startX, int startY) : Powerup(world, IID_MUSHROOM, startX, startY) {}
+	
+	protected:	
 		virtual int score() const { return 75; }
+		virtual int typePowerUp() const { return 1; }
 };
 /*------------------------------------------------------------------------------------------------------------------------------*/
 class Flower : public Powerup
 {
 	public:
-		Flower(StudentWorld* world, int startX, int startY) : Powerup(world, IID_FLOWER, startX, startY, 2) {}
+		Flower(StudentWorld* world, int startX, int startY) : Powerup(world, IID_FLOWER, startX, startY) {}
+	
+	protected:
 		virtual int score() const { return 50; }
+		virtual int typePowerUp() const { return 2; }
 };
 /*------------------------------------------------------------------------------------------------------------------------------*/
 class Star : public Powerup
 {
 	public:
-		Star(StudentWorld* world, int startX, int startY) : Powerup(world, IID_STAR, startX, startY, 3) {}
+		Star(StudentWorld* world, int startX, int startY) : Powerup(world, IID_STAR, startX, startY) {}
+	
+	protected:
 		virtual int score() const { return 100; }
+		virtual int typePowerUp() const { return 3; }
 };
 /*------------------------------------------------------------------------------------------------------------------------------*/
 // Class to hold functionality shared between PiranhaFireball, PeachFireball, and Shell

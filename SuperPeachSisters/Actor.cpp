@@ -192,7 +192,7 @@ void Powerup::doSomething()
 	if (getStudentWorld()->isPlayerAt(getX(), getY(), *this, false)) // Check for contact with Player
 	{
 		getStudentWorld()->increaseScore(score()); // Give appropriate Powerup score 
-		getStudentWorld()->givePowerup(m_powerup); // Give appropriate Powerup to Peach via StudentWorld as an intermediary 
+		getStudentWorld()->givePowerup(typePowerUp()); // Give appropriate Powerup to Peach via StudentWorld as an intermediary 
 		setDead(); // The Powerup is now dead since it has been used 
 		getStudentWorld()->playSound(SOUND_PLAYER_POWERUP);
 		return;
