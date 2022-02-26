@@ -11,6 +11,7 @@
 #include <utility>
 #include <cstdlib>
 #include <algorithm>
+#include <iostream>
 using namespace std;
 
 /*
@@ -35,7 +36,7 @@ static const int WINDOW_WIDTH = 768; //1024;
 static const int WINDOW_HEIGHT = 768;
 
 static const int PERSPECTIVE_NEAR_PLANE = 4;
-static const int PERSPECTIVE_FAR_PLANE	= 22;
+static const int PERSPECTIVE_FAR_PLANE = 22;
 
 static const double VISIBLE_MIN_X = -2.39;
 static const double VISIBLE_MAX_X = 2.1; // 2.39;
@@ -57,7 +58,8 @@ struct SpriteInfo
 {
 	int imageID;
 	int frameNum;
-	std::string	 tgaFileName;
+	std::string tgaFileName;
+	std::string imageName;
 };
 
 static void convertToGlutCoords(double x, double y, double& gx, double& gy, double& gz);
@@ -65,30 +67,30 @@ static void drawPrompt(string mainMessage, string secondMessage);
 static void drawScoreAndLives(string);
 
 enum GameController::GameControllerState : int {
-    welcome, contgame, finishedlevel, init, cleanup, makemove, animate, gameover, prompt, quit, not_applicable
+	welcome, contgame, finishedlevel, init, cleanup, makemove, animate, gameover, prompt, quit, not_applicable
 };
 
 void GameController::initDrawersAndSounds()
 {
 	SpriteInfo drawers[] = {
-    { IID_PEACH, 0, "peach1.tga" },
-    { IID_PEACH, 1, "peach2.tga" },
-    { IID_KOOPA, 0, "koopa1.tga" },
-    { IID_KOOPA, 1, "koopa2.tga" },
-    { IID_GOOMBA, 0, "goomba1.tga" },
-    { IID_GOOMBA, 1, "goomba2.tga" },
-    { IID_SHELL, 0, "shell.tga" },
-    { IID_PIRANHA, 0, "piranha1.tga" },
-    { IID_PIRANHA, 1, "piranha2.tga" },
-    { IID_MARIO, 0, "mario.tga" },
-    { IID_BLOCK, 0, "wall.tga" },
-    { IID_PIPE, 0, "pipe.tga" },
-    { IID_STAR, 0, "star.tga" },
-    { IID_FLOWER, 0, "flower.tga" },
-    { IID_MUSHROOM, 0, "mushroom.tga" },
-    { IID_FLAG, 0, "flag.tga" },
-    { IID_PIRANHA_FIRE, 0, "fire.tga" },
-    { IID_PEACH_FIRE, 0, "fireball.tga" },
+	{ IID_PEACH, 0, "peach1.tga", "PEACH" },
+	{ IID_PEACH, 1, "peach2.tga", "PEACH" },
+	{ IID_KOOPA, 0, "koopa1.tga", "KOOPA" },
+	{ IID_KOOPA, 1, "koopa2.tga", "KOOPA" },
+	{ IID_GOOMBA, 0, "goomba1.tga", "GOOMBA" },
+	{ IID_GOOMBA, 1, "goomba2.tga", "GOOMBA" },
+	{ IID_SHELL, 0, "shell.tga", "SHELL" },
+	{ IID_PIRANHA, 0, "piranha1.tga", "PIRANHA" },
+	{ IID_PIRANHA, 1, "piranha2.tga", "PIRANHA" },
+	{ IID_MARIO, 0, "mario.tga", "MARIO" },
+	{ IID_BLOCK, 0, "wall.tga", "BLOCK" },
+	{ IID_PIPE, 0, "pipe.tga", "PIPE" },
+	{ IID_STAR, 0, "star.tga", "STAR" },
+	{ IID_FLOWER, 0, "flower.tga", "FLOWER" },
+	{ IID_MUSHROOM, 0, "mushroom.tga", "MUSHROOM" },
+	{ IID_FLAG, 0, "flag.tga", "FLAG" },
+	{ IID_PIRANHA_FIRE, 0, "fire.tga", "PIRANHA_FIRE" },
+	{ IID_PEACH_FIRE, 0, "fireball.tga", "PEACH_FIRE" },
 	};
 
 	SoundMapType::value_type sounds[] = {
@@ -106,18 +108,19 @@ void GameController::initDrawersAndSounds()
 		make_pair(SOUND_THEME         , "theme.wav"),
 	};
 
-	for (int k = 0; k < sizeof(drawers)/sizeof(drawers[0]); k++)
+	for (int k = 0; k < sizeof(drawers) / sizeof(drawers[0]); k++)
 	{
 		string path = m_gw->assetPath();
 		if (!path.empty())
 			path += '/';
 		const SpriteInfo& d = drawers[k];
 		if (!m_spriteManager.loadSprite(path + d.tgaFileName, d.imageID, d.frameNum)) {
-      fprintf(stderr,"Error loading sprite: %s\n",(path+d.tgaFileName).c_str());
+			fprintf(stderr, "Error loading sprite: %s\n", (path + d.tgaFileName).c_str());
 			exit(0);
-    }
+		}
+		m_imageNameMap[d.imageID] = d.imageName;
 	}
-	for (int k = 0; k < sizeof(sounds)/sizeof(sounds[0]); k++)
+	for (int k = 0; k < sizeof(sounds) / sizeof(sounds[0]); k++)
 		m_soundMap[sounds[k].first] = sounds[k].second;
 }
 
@@ -144,8 +147,15 @@ static void specialKeyboardEventCallback(int key, int x, int y)
 void GameController::timerFuncCallback(int)
 {
 	Game().doSomething();
-    glutTimerFunc(MS_PER_FRAME, timerFuncCallback, 0);
+	glutTimerFunc(MS_PER_FRAME, timerFuncCallback, 0);
 }
+
+#if defined(__APPLE__)
+void windowCloseCallback()
+{
+	SoundFX().abortClip();
+}
+#endif
 
 void GameController::run(int argc, char* argv[], GameWorld* gw, string windowTitle)
 {
@@ -171,25 +181,29 @@ void GameController::run(int argc, char* argv[], GameWorld* gw, string windowTit
 	glutReshapeFunc(reshapeCallback);
 	glutDisplayFunc(doSomethingCallback);
 	glutTimerFunc(MS_PER_FRAME, timerFuncCallback, 0);
+#if defined(__APPLE__)
+	glutWMCloseFunc(windowCloseCallback);
+#endif
 
 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
 	glutMainLoop();
 	delete m_gw;
+	reportLeakedGraphObjects();
 }
 
 void GameController::keyboardEvent(unsigned char key, int /* x */, int /* y */)
 {
 	switch (key)
 	{
-		case 'a': case '4': m_lastKeyHit = KEY_PRESS_LEFT;	break;
-		case 'd': case '6': m_lastKeyHit = KEY_PRESS_RIGHT; break;
-		case 'w': case '8': m_lastKeyHit = KEY_PRESS_UP;	break;
-		case 's': case '2': m_lastKeyHit = KEY_PRESS_DOWN;	break;
-		case 't':			m_lastKeyHit = KEY_PRESS_TAB;	break;
-		case 'f':			m_singleStep = true;			break;
-		case 'r':			m_singleStep = false;			break;
-		case 'q': case 'Q': setGameState(quit);				break;
-		default:			m_lastKeyHit = key;				break;
+	case 'a': case '4': m_lastKeyHit = KEY_PRESS_LEFT;	break;
+	case 'd': case '6': m_lastKeyHit = KEY_PRESS_RIGHT; break;
+	case 'w': case '8': m_lastKeyHit = KEY_PRESS_UP;	break;
+	case 's': case '2': m_lastKeyHit = KEY_PRESS_DOWN;	break;
+	case 't':			m_lastKeyHit = KEY_PRESS_TAB;	break;
+	case 'f':			m_singleStep = true;			break;
+	case 'r':			m_singleStep = false;			break;
+	case 'q': case 'Q': setGameState(quit);				break;
+	default:			m_lastKeyHit = key;				break;
 	}
 }
 
@@ -197,11 +211,11 @@ void GameController::specialKeyboardEvent(int key, int /* x */, int /* y */)
 {
 	switch (key)
 	{
-		case GLUT_KEY_LEFT:	 m_lastKeyHit = KEY_PRESS_LEFT;	 break;
-		case GLUT_KEY_RIGHT: m_lastKeyHit = KEY_PRESS_RIGHT; break;
-		case GLUT_KEY_UP:	 m_lastKeyHit = KEY_PRESS_UP;	 break;
-		case GLUT_KEY_DOWN:	 m_lastKeyHit = KEY_PRESS_DOWN;	 break;
-		default:			 m_lastKeyHit = INVALID_KEY;	 break;
+	case GLUT_KEY_LEFT:	 m_lastKeyHit = KEY_PRESS_LEFT;	 break;
+	case GLUT_KEY_RIGHT: m_lastKeyHit = KEY_PRESS_RIGHT; break;
+	case GLUT_KEY_UP:	 m_lastKeyHit = KEY_PRESS_UP;	 break;
+	case GLUT_KEY_DOWN:	 m_lastKeyHit = KEY_PRESS_DOWN;	 break;
+	default:			 m_lastKeyHit = INVALID_KEY;	 break;
 	}
 }
 
@@ -222,124 +236,124 @@ void GameController::playSound(int soundID)
 
 void GameController::setGameState(GameControllerState s)
 {
-    if (m_gameState != quit)
-        m_gameState = s;
+	if (m_gameState != quit)
+		m_gameState = s;
 }
 void GameController::quitGame()
 {
-    setGameState(quit);
+	setGameState(quit);
 }
 
 void GameController::doSomething()
 {
 	switch (m_gameState)
 	{
-		case not_applicable:
-			break;
-		case welcome:
-			playSound(SOUND_THEME);
-			m_mainMessage = "Welcome to Super Peach Sisters!";
-			m_secondMessage = "Press Enter to begin play...";
-			setGameState(prompt);
-			m_nextStateAfterPrompt = init;
-			break;
-		case contgame:
-			m_mainMessage = "You lost a life!";
-			m_secondMessage = "Press Enter to continue playing...";
-			setGameState(prompt);
-			m_nextStateAfterPrompt = cleanup;
-			break;
-		case finishedlevel:
-			m_mainMessage = "Woot! You finished the level!";
-			m_secondMessage = "Press Enter to continue playing...";
-			setGameState(prompt);
-			m_nextStateAfterPrompt = cleanup;
-			break;
-		case makemove:
-			m_curIntraFrameTick = ANIMATION_POSITIONS_PER_TICK;
-			m_nextStateAfterAnimate = not_applicable;
+	case not_applicable:
+		break;
+	case welcome:
+		playSound(SOUND_THEME);
+		m_mainMessage = "Welcome to Super Peach Sisters!";
+		m_secondMessage = "Press Enter to begin play...";
+		setGameState(prompt);
+		m_nextStateAfterPrompt = init;
+		break;
+	case contgame:
+		m_mainMessage = "You lost a life!";
+		m_secondMessage = "Press Enter to continue playing...";
+		setGameState(prompt);
+		m_nextStateAfterPrompt = cleanup;
+		break;
+	case finishedlevel:
+		m_mainMessage = "Woot! You finished the level!";
+		m_secondMessage = "Press Enter to continue playing...";
+		setGameState(prompt);
+		m_nextStateAfterPrompt = cleanup;
+		break;
+	case makemove:
+		m_curIntraFrameTick = ANIMATION_POSITIONS_PER_TICK;
+		m_nextStateAfterAnimate = not_applicable;
+		{
+			int status = m_gw->move();
+			if (status == GWSTATUS_PLAYER_DIED)
 			{
-				int status = m_gw->move();
-				if (status == GWSTATUS_PLAYER_DIED)
-				{
-					  // animate one last frame so the Ego can see what happened
-					m_nextStateAfterAnimate = (m_gw->isGameOver() ? gameover : contgame);
-				}
-				else if (status == GWSTATUS_FINISHED_LEVEL)
-				{
-					m_gw->advanceToNextLevel();
-					  // animate one last frame so the Ego can see what happened
-					m_nextStateAfterAnimate = finishedlevel;
-				}
-				else if (status == GWSTATUS_PLAYER_WON)
-				{
-					m_playerWon = true;
-					m_nextStateAfterAnimate = gameover;
-				}
+				// animate one last frame so the Ego can see what happened
+				m_nextStateAfterAnimate = (m_gw->isGameOver() ? gameover : contgame);
 			}
-			setGameState(animate);
-			break;
-		case animate:
-			displayGamePlay();
-			if (m_curIntraFrameTick-- <= 0)
+			else if (status == GWSTATUS_FINISHED_LEVEL)
 			{
-				if (m_nextStateAfterAnimate != not_applicable)
-					setGameState(m_nextStateAfterAnimate);
-				else
-				{
-					int key;
-					if (!m_singleStep  ||  getLastKey(key))
-						setGameState(makemove);
-				}
+				m_gw->advanceToNextLevel();
+				// animate one last frame so the Ego can see what happened
+				m_nextStateAfterAnimate = finishedlevel;
 			}
-			break;
-		case cleanup:
-			m_gw->cleanUp();
-			setGameState(init);
-			break;
-		case gameover:
+			else if (status == GWSTATUS_PLAYER_WON)
 			{
-				ostringstream oss;
-				oss << (m_playerWon ? "You won the game!" : "Game Over!")
-					<< " Final score: " << m_gw->getScore() << "!";
-				m_mainMessage = oss.str();
+				m_playerWon = true;
+				m_nextStateAfterAnimate = gameover;
 			}
+		}
+		setGameState(animate);
+		break;
+	case animate:
+		displayGamePlay();
+		if (m_curIntraFrameTick-- <= 0)
+		{
+			if (m_nextStateAfterAnimate != not_applicable)
+				setGameState(m_nextStateAfterAnimate);
+			else
+			{
+				int key;
+				if (!m_singleStep || getLastKey(key))
+					setGameState(makemove);
+			}
+		}
+		break;
+	case cleanup:
+		m_gw->cleanUp();
+		setGameState(init);
+		break;
+	case gameover:
+	{
+		ostringstream oss;
+		oss << (m_playerWon ? "You won the game!" : "Game Over!")
+			<< " Final score: " << m_gw->getScore() << "!";
+		m_mainMessage = oss.str();
+	}
+	m_secondMessage = "Press Enter to quit...";
+	setGameState(prompt);
+	m_nextStateAfterPrompt = quit;
+	break;
+	case prompt:
+		drawPrompt(m_mainMessage, m_secondMessage);
+		{
+			int key;
+			if (getLastKey(key) && key == '\r')
+				setGameState(m_nextStateAfterPrompt);
+		}
+		break;
+	case init:
+	{
+		int status = m_gw->init();
+		SoundFX().abortClip();
+		if (status == GWSTATUS_PLAYER_WON)
+		{
+			m_playerWon = true;
+			setGameState(gameover);
+		}
+		else if (status == GWSTATUS_LEVEL_ERROR)
+		{
+			m_mainMessage = "Error in level data file encoding!";
 			m_secondMessage = "Press Enter to quit...";
 			setGameState(prompt);
 			m_nextStateAfterPrompt = quit;
-			break;
-		case prompt:
-			drawPrompt(m_mainMessage, m_secondMessage);
-			{
-				int key;
-				if (getLastKey(key) && key == '\r')
-					setGameState(m_nextStateAfterPrompt);
-			}
-			break;
-		case init:
-			{
-				int status = m_gw->init();
-				SoundFX().abortClip();
-				if (status == GWSTATUS_PLAYER_WON)
-				{
-					m_playerWon = true;
-					setGameState(gameover);
-				}
-				else if (status == GWSTATUS_LEVEL_ERROR)
-				{
-					m_mainMessage = "Error in level data file encoding!";
-					m_secondMessage = "Press Enter to quit...";
-					setGameState(prompt);
-					m_nextStateAfterPrompt = quit;
-				}
-				else
-					setGameState(makemove);
-			}
-			break;
-		case quit:
-            SoundFX().abortClip();
-			glutLeaveMainLoop();
-			break;
+		}
+		else
+			setGameState(makemove);
+	}
+	break;
+	case quit:
+		SoundFX().abortClip();
+		glutLeaveMainLoop();
+		break;
 	}
 }
 
@@ -350,17 +364,17 @@ void GameController::displayGamePlay()
 	glLoadIdentity();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 #ifdef _MSC_VER
-    gluLookAt(0, 0, 0, 0, 0, -1, 0, 1, 0);
+	gluLookAt(0, 0, 0, 0, 0, -1, 0, 1, 0);
 #else
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-    gluLookAt(0, 0, 0, 0, 0, -1, 0, 1, 0);
+	gluLookAt(0, 0, 0, 0, 0, -1, 0, 1, 0);
 #pragma GCC diagnostic pop
 #endif
 
-	for (int i = 4 /* NUM_DEPTHS */ - 1; i >= 0; --i)
+	for (int i = GraphObject::NUM_DEPTHS - 1; i >= 0; --i)
 	{
-		std::set<GraphObject*> &graphObjects = GraphObject::getGraphObjects(i);
+		std::set<GraphObject*>& graphObjects = GraphObject::getGraphObjects(i);
 
 		for (auto it = graphObjects.begin(); it != graphObjects.end(); it++)
 		{
@@ -386,20 +400,41 @@ void GameController::displayGamePlay()
 	glutSwapBuffers();
 }
 
-void GameController::reshape (int w, int h)
+void GameController::reportLeakedGraphObjects() const
 {
-	glViewport (0, 0, (GLsizei) w, (GLsizei) h);
-	glMatrixMode (GL_PROJECTION);
-	glLoadIdentity ();
+	int totalLeaked = 0;
+	for (int i = 0; i < GraphObject::NUM_DEPTHS; i++)
+	{
+		set<GraphObject*>& graphObjects = GraphObject::getGraphObjects(i);
+		if (graphObjects.empty())
+			continue;
+		cerr << "***** " << graphObjects.size() << " leaked objects at graphical depth " << i << ":" << endl;
+
+		for (auto it = graphObjects.begin(); it != graphObjects.end(); it++)
+		{
+			GraphObject* cur = *it;
+			cerr << m_imageNameMap.at(cur->m_imageID) << " at (" << cur->getX() << "," << cur->getY() << ")" << endl;
+			totalLeaked++;
+		}
+	}
+	if (totalLeaked > 0)
+		cout << "***** Total leaked objects: " << totalLeaked << endl;
+}
+
+void GameController::reshape(int w, int h)
+{
+	glViewport(0, 0, (GLsizei)w, (GLsizei)h);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
 #ifdef _MSC_VER
-    gluPerspective(45.0, double(WINDOW_WIDTH) / WINDOW_HEIGHT, PERSPECTIVE_NEAR_PLANE, PERSPECTIVE_FAR_PLANE);
+	gluPerspective(45.0, double(WINDOW_WIDTH) / WINDOW_HEIGHT, PERSPECTIVE_NEAR_PLANE, PERSPECTIVE_FAR_PLANE);
 #else
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-    gluPerspective(45.0, double(WINDOW_WIDTH) / WINDOW_HEIGHT, PERSPECTIVE_NEAR_PLANE, PERSPECTIVE_FAR_PLANE);
+	gluPerspective(45.0, double(WINDOW_WIDTH) / WINDOW_HEIGHT, PERSPECTIVE_NEAR_PLANE, PERSPECTIVE_FAR_PLANE);
 #pragma GCC diagnostic pop
 #endif
-	glMatrixMode (GL_MODELVIEW);
+	glMatrixMode(GL_MODELVIEW);
 }
 
 static void convertToGlutCoords(double x, double y, double& gx, double& gy, double& gz)
@@ -407,7 +442,7 @@ static void convertToGlutCoords(double x, double y, double& gx, double& gy, doub
 	x /= VIEW_WIDTH;
 	y /= VIEW_HEIGHT;
 	gx = 2 * VISIBLE_MIN_X + .3 + x * 2 * (VISIBLE_MAX_X - VISIBLE_MIN_X);
-	gy = 2 * VISIBLE_MIN_Y +	  y * 2 * (VISIBLE_MAX_Y - VISIBLE_MIN_Y);
+	gy = 2 * VISIBLE_MIN_Y + y * 2 * (VISIBLE_MAX_Y - VISIBLE_MIN_Y);
 	gz = .6 * VISIBLE_MIN_Z;
 }
 
@@ -425,7 +460,7 @@ static void doOutputStroke(double x, double y, double z, double size, const char
 	glLoadIdentity();
 	glTranslatef(static_cast<GLfloat>(x), static_cast<GLfloat>(y), static_cast<GLfloat>(z));
 	glScalef(scaledSize, scaledSize, scaledSize);
-	for ( ; *str != '\0'; str++)
+	for (; *str != '\0'; str++)
 		glutStrokeCharacter(GLUT_STROKE_ROMAN, *str);
 	glPopMatrix();
 }
@@ -443,8 +478,8 @@ static void outputStrokeCentered(double y, double z, const char* str)
 static void drawPrompt(string mainMessage, string secondMessage)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glColor3f (1.0, 1.0, 1.0);
-	glLoadIdentity ();
+	glColor3f(1.0, 1.0, 1.0);
+	glLoadIdentity();
 	outputStrokeCentered(1, -5, mainMessage.c_str());
 	outputStrokeCentered(-1, -5, secondMessage.c_str());
 	glutSwapBuffers();
@@ -454,10 +489,10 @@ static void drawScoreAndLives(string gameStatText)
 {
 	static int RATE = 1;
 	static GLfloat rgb[3] =
-		{ static_cast<GLfloat>(.6), static_cast<GLfloat>(.6), static_cast<GLfloat>(.6) };
+	{ static_cast<GLfloat>(.6), static_cast<GLfloat>(.6), static_cast<GLfloat>(.6) };
 	for (int k = 0; k < 3; k++)
 	{
-		double strength = rgb[k] + (-RATE + randInt(0, 2*RATE)) / 100.0;
+		double strength = rgb[k] + (-RATE + randInt(0, 2 * RATE)) / 100.0;
 		if (strength < .6)
 			strength = .6;
 		else if (strength > 1.0)

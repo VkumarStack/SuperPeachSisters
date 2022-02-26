@@ -223,7 +223,7 @@ bool StudentWorld::isPlayerAt(double x, double y, const Actor& actor, bool bonk)
     if (overlap(x, x + SPRITE_WIDTH - 1, m_peach->getX(), m_peach->getX() + SPRITE_WIDTH - 1, lower) && overlap(y, y + SPRITE_HEIGHT - 1, m_peach->getY(), m_peach->getY() + SPRITE_HEIGHT - 1, lower))
     {
         if (bonk)
-            m_peach->getBonked(actor);
+            m_peach->bonk(actor);
         return true;
     }
     return false;
@@ -250,7 +250,7 @@ bool StudentWorld::bonkAt(double x, double y, const Actor& actor)
         {
             if (m_actors[i] != &actor) // Check to ensure that the actor doing the bonking is not bonking itself (no self bonking)
             {
-                m_actors[i]->getBonked(actor);
+                m_actors[i]->bonk(actor);
                 bonked = true;
             }
         }
@@ -271,7 +271,7 @@ bool StudentWorld::bonkAt(double x, double y, const Actor& actor)
         {
             if (m_actors[j] != &actor)
             {
-                m_actors[j]->getBonked(actor);
+                m_actors[j]->bonk(actor);
                 bonked = true;
             }
         }
@@ -285,7 +285,7 @@ bool StudentWorld::bonkAt(double x, double y, const Actor& actor)
         {
             if (m_actors[j] != &actor)
             {
-                m_actors[j]->getBonked(actor);
+                m_actors[j]->bonk(actor);
                 bonked = true;
             }
         }

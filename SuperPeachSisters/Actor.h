@@ -13,7 +13,7 @@ class Actor : public GraphObject
 
 		// Pure virtual methods to be overriden with functionality 
 		virtual void doSomething() = 0;
-		virtual void getBonked(const Actor& actor) = 0; // getBonked takes in an Actor in order to determine how exactly the bonking should occur 
+		virtual void bonk(const Actor& actor) = 0; // bonk takes in an Actor in order to determine how exactly the bonking should occur 
 		// i.e. a Block needs to know that the actor bonking it is Peach. Since this Actor reference is const, however, it cannot modify the actor passed in
 
 		// Identifiers to be overriden in order to distinguish between different actors 
@@ -47,7 +47,7 @@ class Peach : public Actor
 	public:
 		Peach(StudentWorld* world, int startX, int startY);
 		virtual void doSomething();
-		virtual void getBonked(const Actor& actor);
+		virtual void bonk(const Actor& actor);
 
 		virtual bool player() const { return true; }
 		// Peach will be treated as a projectile that can damage enemies if she has a star 
@@ -98,7 +98,7 @@ class Terrain : public Actor
 	public:
 		Terrain(StudentWorld* world, int imageID, int startX, int startY) : Actor(world, imageID, startX, startY, 0, 2, 1) {}
 		virtual void doSomething() {} // Both a Block and Pipe do nothing 
-		virtual void getBonked(const Actor& actor) = 0;
+		virtual void bonk(const Actor& actor) = 0;
 		virtual bool terrain() const { return true; }
 };
 
@@ -107,7 +107,7 @@ class Block : public Terrain
 {
 	public:
 		Block(StudentWorld* world, int startX, int startY, int goodie) : Terrain(world, IID_BLOCK, startX, startY) { m_containsGoodie = goodie; }
-		virtual void getBonked(const Actor& actor);
+		virtual void bonk(const Actor& actor);
 	
 	private:
 		int m_containsGoodie; // 0 = No Goodie, 1 = Mushroom, 2 = Flower, 3 = Star 
@@ -118,7 +118,7 @@ class Pipe : public Terrain
 {
 	public:
 		Pipe(StudentWorld* world, int startX, int startY) : Terrain(world, IID_PIPE, startX, startY) {}
-		virtual void getBonked(const Actor& actor) {}
+		virtual void bonk(const Actor& actor) {}
 };
 
 /*------------------------------------------------------------------------------------------------------------------------------*/
@@ -129,7 +129,7 @@ class Goalpost : public Actor
 		Goalpost(StudentWorld* world, int imageID, int startX, int startY) : Actor(world, imageID, startX, startY, 0, 1, 1) {}
 		// Both a Flag and Mario share essentially the same doSomething(); any minor difference is accounted for in reachAction()
 		virtual void doSomething();
-		virtual void getBonked(const Actor& actor) {}
+		virtual void bonk(const Actor& actor) {}
 		virtual bool goalpost() const { return true; }
 	
 	protected:
@@ -167,7 +167,7 @@ class Powerup : public Actor
 		Powerup(StudentWorld* world, int imageID, int startX, int startY) : Actor(world, imageID, startX, startY, 0, 1, 1) {}
 		// All powerups share the same doSomething() functionality 
 		virtual void doSomething();
-		virtual void getBonked(const Actor& actor) {}
+		virtual void bonk(const Actor& actor) {}
 		virtual bool powerup() const { return true; }
 	
 	protected:
@@ -215,7 +215,7 @@ class Projectile : public Actor
 		Projectile(StudentWorld* world, int imageID, int startX, int startY, int direction) : Actor(world, imageID, startX, startY, direction, 1, 1) {}
 		// All projectiles share the same doSomething() functionality 
 		virtual void doSomething();
-		virtual void getBonked(const Actor& actor) {}
+		virtual void bonk(const Actor& actor) {}
 		virtual bool projectile() const { return true; }
 };
 /*------------------------------------------------------------------------------------------------------------------------------*/
@@ -247,7 +247,7 @@ class Enemy : public Actor
 		// Goomba and Koopa, but will overriden for Piranha's unique functionality 
 		virtual void doSomething();
 		// Goomba, Koopa, and Piranha all share the same functionality for getting bonked 
-		virtual void getBonked(const Actor& actor);
+		virtual void bonk(const Actor& actor);
 		virtual bool friendly() const { return false; }
 	
 	protected:

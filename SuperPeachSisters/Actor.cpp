@@ -120,7 +120,7 @@ void Peach::doSomething()
 	}
 }
 
-void Peach::getBonked(const Actor& actor)
+void Peach::bonk(const Actor& actor)
 {
 	// Any damage done to Peach occurs if she is being bonked by a non-friendly actor and if Peach does not have any sort of invincibility 
 	if (!actor.friendly() && !getStarPower() && !getTempInvincibility())
@@ -140,7 +140,7 @@ void Peach::getBonked(const Actor& actor)
 }
 
 /*------------------------------------------------------------------------------------------------------------------------------*/
-void Block::getBonked(const Actor& actor)
+void Block::bonk(const Actor& actor)
 {
 	// A Block can only get bonked if it by Peach 
 	if (actor.player())
@@ -308,7 +308,7 @@ void Enemy::doSomething()
 	}
 }
 
-void Enemy::getBonked(const Actor& actor)
+void Enemy::bonk(const Actor& actor)
 {
 	// An enemy will get bonked (die) if it contacts a projectile from a FRIENDLY source
 	// Note that if Peach has a Star power, she is considered to be a projectile for its duration, so she will bonk an enemy in the same way as a 

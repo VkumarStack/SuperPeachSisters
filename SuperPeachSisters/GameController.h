@@ -13,7 +13,7 @@ class GameWorld;
 
 class GameController
 {
-  public:
+public:
 	void run(int argc, char* argv[], GameWorld* gw, std::string windowTitle);
 
 	bool getLastKey(int& value)
@@ -40,9 +40,9 @@ class GameController
 	void keyboardEvent(unsigned char key, int x, int y);
 	void specialKeyboardEvent(int key, int x, int y);
 
-    void quitGame();
+	void quitGame();
 
-	  // Meyers singleton pattern
+	// Meyers singleton pattern
 	static GameController& getInstance()
 	{
 		static GameController instance;
@@ -50,12 +50,12 @@ class GameController
 	}
 
 	static void timerFuncCallback(int nothing);
-	void setMsPerTick(int ms_per_tick) { m_ms_per_tick = ms_per_tick;  }
+	void setMsPerTick(int ms_per_tick) { m_ms_per_tick = ms_per_tick; }
 
 private:
-    enum GameControllerState : int;
+	enum GameControllerState : int;
 
-	GameWorld*	m_gw;
+	GameWorld* m_gw;
 	GameControllerState	m_gameState;
 	GameControllerState	m_nextStateAfterPrompt;
 	GameControllerState	m_nextStateAfterAnimate;
@@ -66,15 +66,18 @@ private:
 	std::string m_secondMessage;
 	int			m_curIntraFrameTick;
 	using SoundMapType = std::map<int, std::string>;
-	using DrawMapType  = std::map<int, std::string>;
+	using DrawMapType = std::map<int, std::string>;
+	using ImageNameMapType = std::map<int, std::string>;
 	SoundMapType m_soundMap;
+	ImageNameMapType m_imageNameMap;
 	bool		m_playerWon;
 	SpriteManager m_spriteManager;
 
-    void setGameState(GameControllerState s);
+	void setGameState(GameControllerState s);
 
 	void initDrawersAndSounds();
 	void displayGamePlay();
+	void reportLeakedGraphObjects() const;
 
 	static const int kDefaultMsPerTick = 10;
 	static int m_ms_per_tick;
